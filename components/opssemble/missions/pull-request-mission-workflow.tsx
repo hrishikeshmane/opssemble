@@ -25,6 +25,7 @@ import { cn } from "@/lib/utils"
 import { MetaLine, tone } from "@/components/opssemble/presentation"
 import { Section, SectionHeading } from "@/components/opssemble/layout"
 import { StatusGlyph } from "@/components/opssemble/missions/stage-rail"
+import { StressTestChart } from "@/components/opssemble/missions/stress-test-chart"
 import { Button } from "@/components/ui/button"
 import {
   Collapsible,
@@ -114,6 +115,7 @@ function AgentReport({
           >
             {report.report}
           </Streamdown>
+          {agent.key === "stress-test" ? <StressTestChart /> : null}
           <div>
             <h4 className="text-xs font-medium">Tool activity</h4>
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] text-muted-foreground">
