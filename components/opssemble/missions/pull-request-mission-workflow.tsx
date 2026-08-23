@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import type { LucideIcon } from "lucide-react"
+import { Streamdown } from "streamdown"
 import {
   ActivityIcon,
   CheckIcon,
@@ -107,9 +108,12 @@ function AgentReport({
             </p>
             <h3 className="mt-0.5 text-sm font-medium">{agent.reportTitle}</h3>
           </div>
-          <p className="max-w-4xl whitespace-pre-wrap text-xs leading-5 text-muted-foreground">
+          <Streamdown
+            className="max-w-4xl text-xs leading-5 text-muted-foreground [&_a]:text-foreground [&_h1]:text-base [&_h1]:text-foreground [&_h2]:text-sm [&_h2]:text-foreground [&_h3]:text-xs [&_h3]:text-foreground [&_li]:text-xs [&_p]:text-xs [&_td]:text-xs [&_th]:text-xs"
+            mode="static"
+          >
             {report.report}
-          </p>
+          </Streamdown>
           <div>
             <h4 className="text-xs font-medium">Tool activity</h4>
             <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] text-muted-foreground">
