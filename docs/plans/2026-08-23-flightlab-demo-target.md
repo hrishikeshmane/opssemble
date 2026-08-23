@@ -1,5 +1,10 @@
 # FlightLab Fixture-Backed Demo Implementation Plan
 
+> **Reference design, not the four-hour build sequence.** Use
+> [`2026-08-23-three-engineer-hackathon-critical-path.md`](./2026-08-23-three-engineer-hackathon-critical-path.md)
+> as the canonical hackathon plan. This document preserves the larger FlightLab
+> design for work after the judged MVP is stable.
+
 > **For Codex:** Execute this plan task-by-task. Opssemble must behave like the real product. Only external data retrieval is replaced by deterministic fixture-backed provider adapters.
 
 **Goal:** Build a minimal flight-booking victim app and three real GitHub PRs that demonstrate Opssemble's real planning, agent execution, release decision, reporting, Linear, and Codex repair workflows without requiring live CloudWatch, PostHog analytics, Stripe evidence, or AWS FIS data.

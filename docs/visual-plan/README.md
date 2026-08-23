@@ -1,5 +1,10 @@
 # Opssemble Visual Plan
 
+> **Product vision:** This visual plan shows the intended full product. It is not
+> the four-hour implementation checklist. The team should execute
+> [`../plans/2026-08-23-three-engineer-hackathon-critical-path.md`](../plans/2026-08-23-three-engineer-hackathon-critical-path.md)
+> during the hackathon.
+
 This folder contains a visual walkthrough of Opssemble. It includes the product
 plan, screen designs, and a clickable prototype.
 
