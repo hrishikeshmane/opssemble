@@ -649,34 +649,60 @@ export type Mission = {
   agentsComplete: number
   agentsTotal: number
   hypothesis: string
+  stages: MissionStage[]
   runs: AgentRun[]
 }
 
-export const missionStages: MissionStage[] = [
-  { key: "context", index: 1, label: "Context", value: "Complete", status: "ok" },
-  { key: "plan", index: 2, label: "Plan", value: "Contract v3", status: "ok" },
-  {
-    key: "execute",
-    index: 3,
-    label: "Execute",
-    value: "Running",
-    status: "running",
-  },
-  {
-    key: "evaluate",
-    index: 4,
-    label: "Evaluate",
-    value: "Pending",
-    status: "idle",
-  },
-  {
-    key: "decision",
-    index: 5,
-    label: "Decision",
-    value: "Pending",
-    status: "idle",
-  },
-]
+/**
+ * Stage sets are per mission: a held mission has reached its decision, so it
+ * must not render the running mission's rail.
+ */
+function buildStages(
+  values: [string, Status][],
+): MissionStage[] {
+  const labels = [
+    ["context", "Context"],
+    ["plan", "Plan"],
+    ["execute", "Execute"],
+    ["evaluate", "Evaluate"],
+    ["decision", "Decision"],
+  ] as const
+
+  return labels.map(([key, label], index) => ({
+    key: key as MissionStageKey,
+    index: index + 1,
+    label,
+    value: values[index][0],
+    status: values[index][1],
+  }))
+}
+
+/** Rail for a mission still executing its agents. */
+export const missionStages: MissionStage[] = buildStages([
+  ["Complete", "ok"],
+  ["Contract v3", "ok"],
+  ["Running", "running"],
+  ["Pending", "idle"],
+  ["Pending", "idle"],
+])
+
+/** Rail for a mission whose evaluation failed and is now held. */
+const heldStages: MissionStage[] = buildStages([
+  ["Complete", "ok"],
+  ["Contract v3", "ok"],
+  ["Complete", "ok"],
+  ["Failed", "fail"],
+  ["Held", "warn"],
+])
+
+/** Rail for a mission that passed and was promoted. */
+const passedStages: MissionStage[] = buildStages([
+  ["Complete", "ok"],
+  ["Contract v1", "ok"],
+  ["Complete", "ok"],
+  ["Passed", "ok"],
+  ["Promoted", "ok"],
+])
 
 export const missionRuns: AgentRun[] = [
   {
@@ -870,6 +896,7 @@ export const missions: Mission[] = [
     agentsComplete: 2,
     agentsTotal: 4,
     hypothesis: "Lost responses cause an unsafe payment retry",
+    stages: missionStages,
     runs: missionRuns,
   },
   {
@@ -889,6 +916,7 @@ export const missions: Mission[] = [
     agentsComplete: 4,
     agentsTotal: 4,
     hypothesis: "Increased exposure amplifies the duplicate attempt defect",
+    stages: heldStages,
     runs: missionRunsComplete,
   },
   {
@@ -908,6 +936,7 @@ export const missions: Mission[] = [
     agentsComplete: 3,
     agentsTotal: 3,
     hypothesis: "Smaller payload does not regress hydration",
+    stages: passedStages,
     runs: [],
   },
 ]

@@ -89,10 +89,6 @@ function NavLink({
 
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = React.useState(false)
-  React.useEffect(() => setMounted(true), [])
-
-  const isDark = resolvedTheme === "dark"
 
   return (
     <Tooltip>
@@ -102,9 +98,11 @@ function ThemeToggle() {
             variant="ghost"
             size="icon-sm"
             aria-label="Toggle theme"
-            onClick={() => setTheme(isDark ? "light" : "dark")}
+            onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           >
-            {mounted && !isDark ? <Sun /> : <Moon />}
+            {/* Rendered via CSS so the icon never mismatches on hydration. */}
+            <Moon className="hidden dark:block" />
+            <Sun className="block dark:hidden" />
           </Button>
         }
       />

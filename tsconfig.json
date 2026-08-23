@@ -31,5 +31,11 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules",
+    // Vendored AI Elements toolkit. Not referenced by any route in this mock and
+    // it does not type-check against the installed ai/streamdown versions.
+    // Remove this entry once the toolkit is actually wired up and fixed.
+    "components/ai-elements"
+  ]
 }
