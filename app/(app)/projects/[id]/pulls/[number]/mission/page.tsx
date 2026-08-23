@@ -96,7 +96,11 @@ export default async function PullRequestMissionPage({
       </PageHeader>
 
       <PageBody className="[scrollbar-gutter:stable]">
-        <PullRequestMissionWorkflow mission={mission} />
+        <PullRequestMissionWorkflow
+          mission={mission}
+          projectId={project.id}
+          pullRequestNumber={pullRequest.number}
+        />
       </PageBody>
     </div>
   )

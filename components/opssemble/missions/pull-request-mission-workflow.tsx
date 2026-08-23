@@ -9,6 +9,8 @@ import {
   EyeIcon,
   FlaskConicalIcon,
   GaugeIcon,
+  LoaderCircleIcon,
+  PlayIcon,
   PlusIcon,
   WorkflowIcon,
 } from "lucide-react"
@@ -41,14 +43,31 @@ import {
   InputGroupText,
 } from "@/components/ui/input-group"
 import { Separator } from "@/components/ui/separator"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+
+type SpecialistId =
+  | "impact-analysis"
+  | "stress-test"
+  | "chaos-test"
+  | "watch-arm"
+
+type SpecialistReport = {
+  specialistId: SpecialistId
+  status: "completed" | "failed" | "cancelled" | "timed_out"
+  report: string | null
+  toolsUsed: string[]
+  durationMs: number
+  usage: { totalTokens: number | null } | null
+  error: { message: string } | null
+}
+
+type MissionRun = {
+  ok: boolean
+  status: "completed" | "failed" | "cancelled" | "timed_out"
+  selectedAgents: SpecialistId[]
+  reports: SpecialistReport[]
+  summary: string | null
+  error: { message: string } | null
+}
 
 const AGENT_ICON: Record<PullRequestMissionAgentKey, LucideIcon> = {
   impact: ActivityIcon,
@@ -57,154 +76,58 @@ const AGENT_ICON: Record<PullRequestMissionAgentKey, LucideIcon> = {
   "watch-arm": EyeIcon,
 }
 
-const AGENT_STATUS = {
-  completed: { label: "Report ready", status: "ok" },
-  running: { label: "Running", status: "running" },
-  queued: { label: "Queued", status: "queued" },
-} as const
+const SPECIALIST_BY_AGENT: Record<PullRequestMissionAgentKey, SpecialistId> = {
+  impact: "impact-analysis",
+  "stress-test": "stress-test",
+  chaos: "chaos-test",
+  "watch-arm": "watch-arm",
+}
 
 function AgentReport({
   agent,
-  instructions,
+  report,
   instruction,
   onInstructionChange,
   onInstructionSubmit,
 }: {
   agent: PullRequestMissionAgent
-  instructions: string[]
+  report: SpecialistReport | undefined
   instruction: string
   onInstructionChange: (value: string) => void
   onInstructionSubmit: (event: React.FormEvent<HTMLFormElement>) => void
 }) {
-  const [completedMcpCalls, setCompletedMcpCalls] = React.useState(0)
-
-  React.useEffect(() => {
-    if (!agent.mcpCalls?.length) {
-      return
-    }
-
-    const timers = agent.mcpCalls.map((_, index) =>
-      window.setTimeout(
-        () => setCompletedMcpCalls(index + 1),
-        650 * (index + 1)
-      )
-    )
-
-    return () => timers.forEach(window.clearTimeout)
-  }, [agent.mcpCalls])
-
   return (
     <div className="flex flex-col gap-3 px-3 pb-3">
       <Separator />
-      <div>
-        <p className="text-[10px] font-medium text-muted-foreground">
-          Agent-generated report
-        </p>
-        <h3 className="mt-0.5 text-sm font-medium">{agent.reportTitle}</h3>
-        <p className="mt-1 max-w-3xl text-xs text-muted-foreground">
-          {agent.reportSummary}
-        </p>
-      </div>
-
-      <dl className="grid grid-cols-2 gap-x-5 gap-y-2 sm:grid-cols-4">
-        {agent.metrics.map((metric) => (
-          <div className="min-w-0" key={metric.label}>
-            <dt className="truncate text-[10px] text-muted-foreground">
-              {metric.label}
-            </dt>
-            <dd className="truncate font-mono text-xs tabular-nums">
-              {metric.value}
-            </dd>
+      {report?.report ? (
+        <>
+          <div>
+            <p className="text-[10px] font-medium text-muted-foreground">
+              Agent-generated report
+            </p>
+            <h3 className="mt-0.5 text-sm font-medium">{agent.reportTitle}</h3>
           </div>
-        ))}
-      </dl>
-
-      {agent.comparison ? (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Metric</TableHead>
-              <TableHead>Main</TableHead>
-              <TableHead>Candidate</TableHead>
-              <TableHead>Delta</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {agent.comparison.map((row) => (
-              <TableRow key={row.metric}>
-                <TableCell className="font-medium">{row.metric}</TableCell>
-                <TableCell className="font-mono">{row.main}</TableCell>
-                <TableCell className="font-mono">{row.candidate}</TableCell>
-                <TableCell className="font-mono">{row.delta}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      ) : null}
-
-      {agent.sections ? (
-        <dl className="grid gap-3 md:grid-cols-3">
-          {agent.sections.map((section) => (
-            <div key={section.title}>
-              <dt className="text-xs font-medium">{section.title}</dt>
-              <dd className="mt-1 text-xs text-muted-foreground">
-                {section.content}
-              </dd>
+          <p className="max-w-4xl whitespace-pre-wrap text-xs leading-5 text-muted-foreground">
+            {report.report}
+          </p>
+          <div>
+            <h4 className="text-xs font-medium">Tool activity</h4>
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[10px] text-muted-foreground">
+              {report.toolsUsed.map((toolName, index) => (
+                <span key={`${toolName}-${index}`}>{toolName}</span>
+              ))}
+              <span>{(report.durationMs / 1000).toFixed(1)}s</span>
+              {report.usage?.totalTokens ? (
+                <span>{report.usage.totalTokens.toLocaleString()} tokens</span>
+              ) : null}
             </div>
-          ))}
-        </dl>
-      ) : null}
-
-      {agent.mcpCalls ? (
-        <div>
-          <div className="flex items-center gap-2">
-            <h4 className="text-xs font-medium">Fake MCP activity</h4>
-            <span className="font-mono text-[10px] text-muted-foreground">
-              fake-observability-mcp
-            </span>
           </div>
-          <ol className="mt-2 flex flex-col gap-2">
-            {agent.mcpCalls.map((call, index) => {
-              const complete = index < completedMcpCalls
-              const running = index === completedMcpCalls
-
-              return (
-                <li
-                  className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2"
-                  key={call.name}
-                >
-                  <StatusGlyph
-                    className="mt-0.5"
-                    status={complete ? "ok" : running ? "running" : "queued"}
-                  />
-                  <div className="min-w-0">
-                    <p className="font-mono text-xs">{call.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {call.summary}
-                    </p>
-                    {complete ? (
-                      <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
-                        {call.output}
-                      </p>
-                    ) : null}
-                  </div>
-                </li>
-              )
-            })}
-          </ol>
-        </div>
-      ) : null}
-
-      <ul className="flex list-disc flex-col gap-1 pl-4 text-xs text-muted-foreground">
-        {agent.findings.map((finding) => (
-          <li key={finding}>{finding}</li>
-        ))}
-        {instructions.map((customInstruction) => (
-          <li className="text-foreground" key={customInstruction}>
-            Custom: {customInstruction}
-          </li>
-        ))}
-      </ul>
+        </>
+      ) : (
+        <p className="text-xs text-destructive">
+          {report?.error?.message ?? "This specialist did not return a report."}
+        </p>
+      )}
 
       {agent.acceptsInstructions ? (
         <form onSubmit={onInstructionSubmit}>
@@ -214,7 +137,7 @@ function AgentReport({
                 Custom watch instruction
               </FieldLabel>
               <FieldDescription>
-                Add a signal or deployment condition for this pull request.
+                Add an instruction and rerun the agents with this context.
               </FieldDescription>
               <InputGroup>
                 <InputGroupTextarea
@@ -223,7 +146,7 @@ function AgentReport({
                   onChange={(event) =>
                     onInstructionChange(event.currentTarget.value)
                   }
-                  placeholder="Example: Watch failed mission-page loads for 30 minutes"
+                  placeholder="Watch failed mission-page loads for 30 minutes"
                   value={instruction}
                 />
                 <InputGroupAddon align="block-end">
@@ -235,7 +158,7 @@ function AgentReport({
                     type="submit"
                   >
                     <PlusIcon data-icon="inline-start" />
-                    Add instruction
+                    Run with instruction
                   </Button>
                 </InputGroupAddon>
               </InputGroup>
@@ -249,24 +172,33 @@ function AgentReport({
 
 function AgentRow({
   agent,
-  instructions,
+  report,
+  running,
   instruction,
   onInstructionChange,
   onInstructionSubmit,
+  onOpen,
 }: {
   agent: PullRequestMissionAgent
-  instructions: string[]
+  report: SpecialistReport | undefined
+  running: boolean
   instruction: string
   onInstructionChange: (value: string) => void
   onInstructionSubmit: (event: React.FormEvent<HTMLFormElement>) => void
+  onOpen: () => void
 }) {
   const [open, setOpen] = React.useState(false)
   const Icon = AGENT_ICON[agent.key]
-  const status = AGENT_STATUS[agent.status]
 
   return (
     <li>
-      <Collapsible onOpenChange={setOpen} open={open}>
+      <Collapsible
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen)
+          if (nextOpen) onOpen()
+        }}
+        open={open}
+      >
         <CollapsibleTrigger className="group/agent-trigger flex min-h-12 w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring">
           <Icon className="size-4 shrink-0 text-muted-foreground" />
           <span className="min-w-0 flex-1">
@@ -274,29 +206,52 @@ function AgentRow({
               {agent.name}
             </span>
             <span className="block truncate text-xs text-muted-foreground">
-              {agent.headline}
+              {report?.report
+                ? "Agent report ready"
+                : running
+                  ? "Agent is running"
+                  : "Open to run this mission"}
             </span>
           </span>
           <span
             className={cn(
               "flex shrink-0 items-center gap-1.5 text-[11px]",
-              agent.status === "completed" ? tone.good : tone.pending
+              report?.status === "completed" ? tone.good : tone.pending
             )}
           >
-            <StatusGlyph status={status.status} />
-            {status.label}
+            <StatusGlyph
+              status={
+                report?.status === "completed"
+                  ? "ok"
+                  : running
+                    ? "running"
+                    : "queued"
+              }
+            />
+            {report?.status === "completed"
+              ? "Report ready"
+              : running
+                ? "Running"
+                : "Ready"}
           </span>
           <ChevronDownIcon className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 group-aria-expanded/agent-trigger:rotate-180" />
         </CollapsibleTrigger>
         {open ? (
           <CollapsibleContent>
-            <AgentReport
-              agent={agent}
-              instruction={instruction}
-              instructions={instructions}
-              onInstructionChange={onInstructionChange}
-              onInstructionSubmit={onInstructionSubmit}
-            />
+            {running && !report ? (
+              <div className="flex items-center gap-2 px-3 pb-3 text-xs text-muted-foreground">
+                <LoaderCircleIcon className="size-3.5 animate-spin" />
+                Orchestrator and specialist agents are running...
+              </div>
+            ) : report ? (
+              <AgentReport
+                agent={agent}
+                instruction={instruction}
+                onInstructionChange={onInstructionChange}
+                onInstructionSubmit={onInstructionSubmit}
+                report={report}
+              />
+            ) : null}
           </CollapsibleContent>
         ) : null}
       </Collapsible>
@@ -306,32 +261,81 @@ function AgentRow({
 
 export function PullRequestMissionWorkflow({
   mission,
+  projectId,
+  pullRequestNumber,
 }: {
   mission: PullRequestMission
+  projectId: string
+  pullRequestNumber: number
 }) {
   const [instruction, setInstruction] = React.useState("")
-  const [instructions, setInstructions] = React.useState<string[]>([])
+  const [run, setRun] = React.useState<MissionRun | null>(null)
+  const [running, setRunning] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
 
-  function addInstruction(event: React.FormEvent<HTMLFormElement>) {
+  const runMission = React.useCallback(
+    async (customInstructions = instruction.trim()) => {
+      if (running) return
+      setRunning(true)
+      setError(null)
+
+      try {
+        const response = await fetch(
+          `/api/projects/${projectId}/pulls/${pullRequestNumber}/mission`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              customInstructions: customInstructions || undefined,
+            }),
+          }
+        )
+        const result = (await response.json()) as MissionRun
+
+        if (!response.ok || !result.ok) {
+          throw new Error(
+            result.error?.message ?? "The agent mission could not complete."
+          )
+        }
+
+        setRun(result)
+      } catch (caught) {
+        setError(
+          caught instanceof Error
+            ? caught.message
+            : "The agent mission could not complete."
+        )
+      } finally {
+        setRunning(false)
+      }
+    },
+    [instruction, projectId, pullRequestNumber, running]
+  )
+
+  function submitInstruction(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const nextInstruction = instruction.trim()
-
-    if (!nextInstruction) {
-      return
-    }
-
-    setInstructions((current) => [...current, nextInstruction])
-    setInstruction("")
+    void runMission(instruction.trim())
   }
 
   return (
     <>
       <SectionHeading
         action={
-          <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <CheckIcon className={cn("size-3.5", tone.good)} />
-            Complete
-          </span>
+          <Button
+            disabled={running}
+            onClick={() => void runMission()}
+            size="xs"
+            variant="outline"
+          >
+            {running ? (
+              <LoaderCircleIcon className="animate-spin" data-icon="inline-start" />
+            ) : run ? (
+              <PlayIcon data-icon="inline-start" />
+            ) : (
+              <WorkflowIcon data-icon="inline-start" />
+            )}
+            {running ? "Running agents" : run ? "Run again" : "Run mission"}
+          </Button>
         }
         title="Orchestrator"
       />
@@ -340,10 +344,14 @@ export function PullRequestMissionWorkflow({
           <WorkflowIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           <div className="min-w-0">
             <p className="text-sm font-medium">
-              {mission.orchestrator.headline}
+              {running
+                ? "Selecting and running specialist agents"
+                : run
+                  ? `Completed ${run.reports.length} specialist reports`
+                  : mission.orchestrator.headline}
             </p>
-            <p className="mt-1 max-w-4xl text-xs text-muted-foreground">
-              {mission.orchestrator.rationale}
+            <p className="mt-1 max-w-4xl whitespace-pre-wrap text-xs text-muted-foreground">
+              {error ?? run?.summary ?? mission.orchestrator.rationale}
             </p>
             <MetaLine className="mt-2 flex-wrap text-xs text-muted-foreground">
               {mission.agents.map((agent) => (
@@ -351,13 +359,16 @@ export function PullRequestMissionWorkflow({
               ))}
             </MetaLine>
           </div>
+          {run?.ok ? (
+            <CheckIcon className={cn("ml-auto size-3.5 shrink-0", tone.good)} />
+          ) : null}
         </div>
       </Section>
 
       <SectionHeading
         action={
           <span className="text-xs text-muted-foreground">
-            Open an agent to view its report
+            Open an agent to run and view reports
           </span>
         }
         count={mission.agents.length}
@@ -368,10 +379,16 @@ export function PullRequestMissionWorkflow({
           <AgentRow
             agent={agent}
             instruction={instruction}
-            instructions={agent.acceptsInstructions ? instructions : []}
             key={agent.key}
             onInstructionChange={setInstruction}
-            onInstructionSubmit={addInstruction}
+            onInstructionSubmit={submitInstruction}
+            onOpen={() => {
+              if (!run && !running) void runMission()
+            }}
+            report={run?.reports.find(
+              (report) => report.specialistId === SPECIALIST_BY_AGENT[agent.key]
+            )}
+            running={running}
           />
         ))}
       </ul>
