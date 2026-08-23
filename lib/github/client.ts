@@ -62,13 +62,14 @@ function firstLine(value: unknown): string | null {
 
 async function runGitHubCli(
   args: string[],
-  options: { cwd?: string; timeoutMs?: number } = {}
+  options: { cwd?: string; timeoutMs?: number; signal?: AbortSignal } = {}
 ): Promise<string> {
   try {
     const result = await execFile("gh", args, {
       cwd: options.cwd,
       encoding: "utf8",
       timeout: options.timeoutMs ?? DEFAULT_TIMEOUT_MS,
+      signal: options.signal,
       maxBuffer: MAX_OUTPUT_BYTES,
       env: {
         ...process.env,
@@ -276,7 +277,8 @@ const PULL_REQUEST_DETAIL_FIELDS = [
 
 export async function getGitHubPullRequest(
   repositoryPath: string,
-  pullRequestNumber: number
+  pullRequestNumber: number,
+  options: { signal?: AbortSignal } = {}
 ): Promise<GitHubPullRequestDetail> {
   if (!Number.isSafeInteger(pullRequestNumber) || pullRequestNumber < 1) {
     throw new GitHubCliError("Enter a valid pull request number.")
@@ -291,7 +293,7 @@ export async function getGitHubPullRequest(
         "--json",
         PULL_REQUEST_DETAIL_FIELDS.join(","),
       ],
-      { cwd: repositoryPath }
+      { cwd: repositoryPath, signal: options.signal }
     ),
     "pull request"
   )
@@ -301,7 +303,8 @@ export async function getGitHubPullRequest(
 
 export async function getGitHubPullRequestDiff(
   repositoryPath: string,
-  pullRequestNumber: number
+  pullRequestNumber: number,
+  options: { signal?: AbortSignal } = {}
 ): Promise<GitHubPullRequestFile[]> {
   if (!Number.isSafeInteger(pullRequestNumber) || pullRequestNumber < 1) {
     throw new GitHubCliError("Enter a valid pull request number.")
@@ -310,6 +313,7 @@ export async function getGitHubPullRequestDiff(
   const raw = await runGitHubCli(["pr", "diff", String(pullRequestNumber)], {
     cwd: repositoryPath,
     timeoutMs: 120_000,
+    signal: options.signal,
   })
 
   return decodeCliData(() => decodeGitHubPullRequestDiff(raw))

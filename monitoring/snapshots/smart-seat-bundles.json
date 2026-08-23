@@ -1,0 +1,26 @@
+{
+  "changeId": "snapshot-pr-smart-seat-bundles",
+  "dataMode": "snapshot",
+  "repository": "Prathamesh-Pawar/flylab",
+  "repositoryUrl": "https://github.com/Prathamesh-Pawar/flylab",
+  "number": 101,
+  "title": "Add smart seat bundle scoring API",
+  "state": "open",
+  "headSha": "1111111111111111111111111111111111111111",
+  "baseSha": "0000000000000000000000000000000000000000",
+  "mergeSha": null,
+  "releaseSha": null,
+  "changedFiles": [
+    {"path": "app/api/seat-scores/route.ts", "additions": 54, "deletions": 0},
+    {"path": "lib/seat-scoring.ts", "additions": 39, "deletions": 0},
+    {"path": "tests/seat-scoring.test.ts", "additions": 31, "deletions": 0}
+  ],
+  "diff": "diff --git a/app/api/seat-scores/route.ts b/app/api/seat-scores/route.ts\nnew file mode 100644\n--- /dev/null\n+++ b/app/api/seat-scores/route.ts\n@@ -0,0 +1,4 @@\n+export async function POST(request: Request) {\n+  const bundles = await request.json();\n+  return Response.json(await scoreBundlesSerially(bundles));\n+}\n",
+  "repositoryDocs": {
+    "README.md": "FlightLab is a deterministic SFO to JFK booking application. Runtime triggers are neutral and signed.",
+    "docs/ARCHITECTURE.md": "Feature APIs execute in FlightLab; provider-shaped evidence is owned by the external monitoring service.",
+    "docs/RUNBOOK.md": "Verify /api/version before exercising a feature API."
+  },
+  "checks": {"state": "success", "required": [{"name": "test", "status": "completed", "conclusion": "success"}]},
+  "deployment": {"state": "pending", "url": null}
+}

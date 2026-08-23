@@ -17,6 +17,15 @@ npm run dev
 
 Then open http://localhost:3000 — it redirects to `/projects`.
 
+Run the monitoring/MCP process independently with:
+
+```bash
+UV_CACHE_DIR=/tmp/opssemble-uv-cache uv sync --group dev
+MCP_TOKEN=test-mcp-token REPLAY_SPEED=100 \
+  UV_CACHE_DIR=/tmp/opssemble-uv-cache \
+  uv run uvicorn monitoring.app:app --host 127.0.0.1 --port 8000
+```
+
 Press <kbd>d</kbd> to toggle light and dark. The mock is designed dark-first.
 
 ## Screens
@@ -59,7 +68,10 @@ Source wireframes for the product live in
 ```bash
 npm run typecheck
 npm run lint
+npm run test
 npm run build
+UV_CACHE_DIR=/tmp/opssemble-uv-cache uv run --group dev pytest -q
+UV_CACHE_DIR=/tmp/opssemble-uv-cache uv run python -m monitoring generate --check
 ```
 
 `components/ai-elements/` is a vendored AI Elements toolkit that is not wired

@@ -1,0 +1,114 @@
+diff --git a/lib/flexible-search.ts b/lib/flexible-search.ts
+new file mode 100644
+index 0000000..ec712b1
+--- /dev/null
++++ b/lib/flexible-search.ts
+@@ -0,0 +1,31 @@
++import { searchFlights } from "@/lib/search";
++
++export type FlexibleDateResult = {
++  date: string;
++  flightCount: number;
++  lowestFareCents: number | null;
++};
++
++export function searchFlexibleDates(input: {
++  origin: string;
++  destination: string;
++  departureDate: string;
++  days?: number;
++}): FlexibleDateResult[] {
++  const requestedDays = Number.isInteger(input.days) ? input.days! : 7;
++  const days = Math.min(7, Math.max(1, requestedDays));
++  const start = new Date(`${input.departureDate}T00:00:00.000Z`);
++  if (Number.isNaN(start.getTime())) throw new Error("departureDate must be an ISO date");
++
++  return Array.from({ length: days }, (_, offset) => {
++    const date = new Date(start);
++    date.setUTCDate(start.getUTCDate() + offset);
++    const departureDate = date.toISOString().slice(0, 10);
++    const flights = searchFlights({ ...input, departureDate });
++    return {
++      date: departureDate,
++      flightCount: flights.length,
++      lowestFareCents: flights.length ? Math.min(...flights.map((flight) => flight.fareCents)) : null,
++    };
++  });
++}
+diff --git a/app/api/search/flexible/route.ts b/app/api/search/flexible/route.ts
+new file mode 100644
+index 0000000..5719590
+--- /dev/null
++++ b/app/api/search/flexible/route.ts
+@@ -0,0 +1,35 @@
++import { randomUUID } from "node:crypto";
++import { NextResponse } from "next/server";
++import { searchFlexibleDates } from "@/lib/flexible-search";
++import { runWithRuntimeEnvelope } from "@/lib/runtime-envelope";
++
++export async function POST(request: Request): Promise<NextResponse> {
++  const body = await request.json() as {
++    origin?: string;
++    destination?: string;
++    departureDate?: string;
++    days?: number;
++  };
++  const requestId = request.headers.get("x-request-id") ?? randomUUID();
++  const operationId = `search-${requestId}`;
++  const execution = await runWithRuntimeEnvelope<Record<string, unknown>>(
++    { route: "/api/search/flexible", requestId, operationId },
++    async () => {
++      if (!body.origin || !body.destination || !body.departureDate) {
++        return { result: { error: "origin, destination, and departureDate are required" }, statusCode: 400 };
++      }
++      try {
++        const dates = searchFlexibleDates({
++          origin: body.origin,
++          destination: body.destination,
++          departureDate: body.departureDate,
++          days: body.days,
++        });
++        return { result: { dates }, statusCode: 200 };
++      } catch (error) {
++        return { result: { error: error instanceof Error ? error.message : "invalid search" }, statusCode: 400 };
++      }
++    },
++  );
++  return NextResponse.json(execution.result, { status: execution.statusCode });
++}
+diff --git a/tests/flexible-search-api.test.ts b/tests/flexible-search-api.test.ts
+new file mode 100644
+index 0000000..58e228f
+--- /dev/null
++++ b/tests/flexible-search-api.test.ts
+@@ -0,0 +1,29 @@
++import { describe, expect, it } from "vitest";
++import { POST } from "@/app/api/search/flexible/route";
++import { searchFlexibleDates } from "@/lib/flexible-search";
++
++describe("flexible date search", () => {
++  it("aggregates a bounded seven-day window", () => {
++    const results = searchFlexibleDates({
++      origin: "SFO", destination: "JFK", departureDate: "2026-09-04", days: 20,
++    });
++
++    expect(results).toHaveLength(7);
++    expect(results[0]).toMatchObject({ date: "2026-09-04", flightCount: 6 });
++    expect(results[6].date).toBe("2026-09-10");
++  });
++
++  it("serves the aggregate through the real search API", async () => {
++    const response = await POST(new Request("http://flightlab.test/api/search/flexible", {
++      method: "POST",
++      headers: { "content-type": "application/json", "x-request-id": "req-search-1" },
++      body: JSON.stringify({
++        origin: "SFO", destination: "JFK", departureDate: "2026-09-04", days: 7,
++      }),
++    }));
++
++    expect(response.status).toBe(200);
++    const body = await response.json();
++    expect(body.dates).toHaveLength(7);
++  });
++});
+
