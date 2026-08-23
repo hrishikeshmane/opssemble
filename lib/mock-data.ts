@@ -1572,11 +1572,11 @@ export const integrations: Integration[] = [
   },
   {
     provider: "Greptile",
-    environment: "flightlab",
+    environment: "Not configured",
     scope: "Knowledge base read",
-    status: "ok",
-    statusLabel: "Connected",
-    lastEvent: "9m ago",
+    status: "idle",
+    statusLabel: "Not configured",
+    lastEvent: "Never",
     writeAccess: false,
   },
   {

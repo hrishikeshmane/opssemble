@@ -12,11 +12,9 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import {
-  ChevronsUpDown,
   FolderGit2,
   MoonIcon,
   PlugIcon,
-  Radar,
   Search,
   SunIcon,
 } from "lucide-react"
@@ -32,7 +30,6 @@ import {
 
 const NAV = [
   { href: "/projects", label: "Projects", Icon: FolderGit2 },
-  { href: "/missions", label: "Missions", Icon: Radar },
   { href: "/integrations", label: "Integrations", Icon: PlugIcon },
 ] as const
 
@@ -102,18 +99,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-10 shrink-0 items-center px-4">
           <span className="text-sm font-semibold">Opssemble</span>
         </div>
-
-        {/* The mock surfaces remain scoped to their seeded repository. The live
-            project pages use this same affordance to return to the catalog. */}
-        <Link
-          href="/projects"
-          className="mx-2 mb-2 flex h-8 items-center gap-2 rounded-md px-2 text-left transition-colors outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">
-            {isProjectCatalog ? "Project catalog" : repo.slug}
-          </span>
-          <ChevronsUpDown className="size-3 shrink-0 text-muted-foreground" />
-        </Link>
 
         <nav className="flex flex-col gap-0.5 px-2">
           {NAV.map((item) => (
