@@ -1,0 +1,160 @@
+<Prototype
+  title="Opssemble Change to Release Mission prototype"
+  brief="Open a GitHub PR, extend its generated Watch Plan, arm the versioned Release Contract, trigger a live mission, inspect evidence, and dispatch a bounded Codex repair."
+  surface="desktop"
+  initialScreenId="changes-inbox"
+>
+  <PrototypeScreen
+    id="changes-inbox"
+    title="Changes inbox"
+    summary="Open the high-risk Stripe retry PR and inspect its proposed operational coverage."
+    surface="desktop"
+    html={`
+<div style="display:flex;height:100%;box-sizing:border-box;padding:16px;gap:0">
+  <aside style="width:166px;display:flex;flex-direction:column;gap:12px;padding:4px 14px 4px 2px;border-right:1.4px solid var(--wf-line)">
+    <div><strong style="font-size:18px">Opssemble</strong><br /><small>acme / checkout-lab</small></div>
+    <nav style="display:flex;flex-direction:column;gap:7px;flex:1"><div class="wf-pill accent">Changes</div><div style="padding:7px 9px">Missions</div><div style="padding:7px 9px">Agents</div><div style="padding:7px 9px">Policies</div><div style="padding:7px 9px">Integrations</div></nav>
+    <div class="wf-box" style="padding:9px"><small>GitHub repository</small><br /><strong>checkout-lab</strong></div>
+  </aside>
+  <main style="min-width:0;flex:1;display:flex;flex-direction:column;gap:13px;padding-left:16px">
+    <header style="display:flex;align-items:center;width:100%;gap:10px"><div><h1 style="margin:0">Changes</h1><small>Operational coverage for connected pull requests</small></div><div style="flex:1"></div><button><span data-icon="search" aria-label="Search"></span></button><button><span data-icon="settings" aria-label="Repository settings"></span></button></header>
+    <div style="display:flex;gap:7px"><span class="wf-pill accent">Open 7</span><span class="wf-pill">Merged 18</span><span class="wf-pill">Needs input 2</span><span class="wf-pill">Armed 3</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px"><div class="wf-box"><small>Open pull requests</small><br /><strong style="font-size:20px">7</strong></div><div class="wf-box"><small>Need a decision</small><br /><strong style="font-size:20px">2</strong></div><div class="wf-box"><small>Ready for trigger</small><br /><strong style="font-size:20px">3</strong></div></div>
+    <div class="wf-card" style="padding:0;display:flex;flex-direction:column;gap:0">
+      <div style="display:grid;grid-template-columns:minmax(0,2.2fr) .6fr 1fr 1.15fr .9fr .65fr;gap:9px;padding:9px 11px;border-bottom:1.4px solid var(--wf-line)"><small>CHANGE</small><small>RISK</small><small>WATCH PLAN</small><small>TRIGGER</small><small>AGENTS</small><small>UPDATED</small></div>
+      <button data-goto="watch-plan-draft" style="display:grid;grid-template-columns:minmax(0,2.2fr) .6fr 1fr 1.15fr .9fr .65fr;gap:9px;padding:12px 11px;border:0;border-bottom:1.4px solid var(--wf-line);text-align:left;align-items:center;background:var(--wf-accent-soft);color:var(--wf-ink);width:100%"><div><strong>#184 Harden Stripe retry semantics</strong><br /><small>main <- retry-safety · a17c92e</small></div><span style="color:var(--wf-warn)">High</span><span class="wf-pill">Draft</span><small>Candidate ready</small><small>4 proposed</small><small>8s</small></button>
+      <div style="display:grid;grid-template-columns:minmax(0,2.2fr) .6fr 1fr 1.15fr .9fr .65fr;gap:9px;padding:12px 11px;border-bottom:1.4px solid var(--wf-line)"><div><strong>#183 Add tax-region fallback</strong><br /><small>main <- tax-fallback · b83dc11</small></div><span>Medium</span><span class="wf-pill" style="color:var(--wf-warn)">Needs input</span><small>Merge</small><small>3 proposed</small><small>7m</small></div>
+      <div style="display:grid;grid-template-columns:minmax(0,2.2fr) .6fr 1fr 1.15fr .9fr .65fr;gap:9px;padding:12px 11px"><div><strong>#181 Reduce checkout payload</strong><br /><small>main <- smaller-payload · 820bc44</small></div><span>Medium</span><span class="wf-pill" style="color:var(--wf-ok)">Armed</span><small>Candidate ready</small><small>3 selected</small><small>32m</small></div>
+    </div>
+    <p class="wf-muted" style="margin-top:auto">Select PR #184 to configure what Opssemble should prove after it ships.</p>
+  </main>
+</div>
+    `}
+  />
+
+  <PrototypeScreen
+    id="watch-plan-draft"
+    title="Watch Plan draft"
+    summary="Review the inferred coverage and compile an additional monitoring requirement."
+    surface="desktop"
+    html={`
+<div style="display:flex;height:100%;box-sizing:border-box;padding:16px;gap:0">
+  <aside style="width:166px;display:flex;flex-direction:column;gap:12px;padding:4px 14px 4px 2px;border-right:1.4px solid var(--wf-line)"><div><strong style="font-size:18px">Opssemble</strong><br /><small>acme / checkout-lab</small></div><nav style="display:flex;flex-direction:column;gap:7px;flex:1"><div class="wf-pill accent">Changes</div><div style="padding:7px 9px">Missions</div><div style="padding:7px 9px">Agents</div><div style="padding:7px 9px">Policies</div><div style="padding:7px 9px">Integrations</div></nav><div class="wf-box" style="padding:9px"><small>Plan status</small><br /><strong>Draft</strong></div></aside>
+  <main style="min-width:0;flex:1;display:flex;flex-direction:column;gap:12px;padding-left:16px">
+    <div style="display:flex;align-items:center;gap:8px"><button data-goto="changes-inbox"><span data-icon="arrowLeft" aria-label="Back"></span></button><span>Changes / #184</span><div style="flex:1"></div><span class="wf-pill">Contract v2</span></div>
+    <header style="display:flex;align-items:flex-start;gap:10px"><div><h1 style="margin:0">Harden Stripe retry semantics</h1><small>PR #184 · a17c92e · 7 files changed</small></div><div style="flex:1"></div><span class="wf-pill" style="color:var(--wf-warn)">High risk</span></header>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.45fr);gap:12px;flex:1">
+      <section style="display:flex;flex-direction:column;gap:9px">
+        <div class="wf-box"><small>INFERRED IMPACT</small><h3>Checkout payment and fulfillment path</h3><p class="wf-muted">Stripe retry logic changed. Orders, fulfillment, and smart-payment-retry-v2 are downstream.</p></div>
+        <div class="wf-box"><small>WHY HIGH RISK</small><p>External payment side effect</p><p>Retry and timeout behavior changed</p><p>Previous retry change was reverted</p></div>
+        <div class="wf-box"><small>SOURCES</small><p>GitHub diff · 7 files</p><p>Greptile · architecture, runbook, revert history</p></div>
+      </section>
+      <section style="display:flex;flex-direction:column;gap:9px">
+        <div class="wf-card" style="padding:0"><div style="display:flex;padding:9px 11px;border-bottom:1.4px solid var(--wf-line)"><strong>Proposed agents</strong><div style="flex:1"></div><small>4 selected</small></div><div style="display:grid;grid-template-columns:1fr .7fr 2fr;gap:8px;padding:9px 11px;border-bottom:1.4px solid var(--wf-line)"><strong>Resilience</strong><span class="wf-pill">Required</span><small>Retry and external side effect changed</small></div><div style="display:grid;grid-template-columns:1fr .7fr 2fr;gap:8px;padding:9px 11px;border-bottom:1.4px solid var(--wf-line)"><strong>Performance</strong><span class="wf-pill">Proposed</span><small>Checkout hot path changed</small></div><div style="display:grid;grid-template-columns:1fr .7fr 2fr;gap:8px;padding:9px 11px"><strong>Product Health</strong><span class="wf-pill">Proposed</span><small>Flagged customer journey affected</small></div></div>
+        <div class="wf-box"><small>EXISTING GUARDRAILS</small><div style="display:flex;justify-content:space-between;padding:6px 0"><span>Checkout p99</span><strong>&lt;= 2s</strong></div><div style="display:flex;justify-content:space-between;padding:6px 0;border-top:1.4px solid var(--wf-line)"><span>Payment success</span><strong>&gt;= 99%</strong></div></div>
+        <div class="wf-box"><label><small>ADD MONITORING REQUIREMENT</small><textarea style="width:100%;box-sizing:border-box;margin-top:7px;min-height:72px">Also monitor EU checkout completion and duplicate Stripe attempts.</textarea></label><p class="wf-muted">Opssemble will resolve this into provider metrics and explicit thresholds before it can run.</p></div>
+      </section>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1.4px solid var(--wf-line)"><small>Custom text is never executed as policy.</small><div style="flex:1"></div><button>Save draft</button><button class="primary" data-goto="watch-plan-ready">Compile requirement</button></div>
+  </main>
+</div>
+    `}
+  />
+
+  <PrototypeScreen
+    id="watch-plan-ready"
+    title="Watch Plan ready"
+    summary="Inspect the resolved clauses, then arm the immutable Release Contract."
+    surface="desktop"
+    html={`
+<div style="display:flex;height:100%;box-sizing:border-box;padding:16px;gap:0">
+  <aside style="width:166px;display:flex;flex-direction:column;gap:12px;padding:4px 14px 4px 2px;border-right:1.4px solid var(--wf-line)"><div><strong style="font-size:18px">Opssemble</strong><br /><small>acme / checkout-lab</small></div><nav style="display:flex;flex-direction:column;gap:7px;flex:1"><div class="wf-pill accent">Changes</div><div style="padding:7px 9px">Missions</div><div style="padding:7px 9px">Agents</div><div style="padding:7px 9px">Policies</div><div style="padding:7px 9px">Integrations</div></nav><div class="wf-box" style="padding:9px"><small>Plan status</small><br /><strong style="color:var(--wf-ok)">Ready</strong></div></aside>
+  <main style="min-width:0;flex:1;display:flex;flex-direction:column;gap:12px;padding-left:16px">
+    <div style="display:flex;align-items:center;gap:8px"><button data-goto="watch-plan-draft"><span data-icon="arrowLeft" aria-label="Back"></span></button><span>Changes / #184</span><div style="flex:1"></div><span class="wf-pill">Contract v3</span></div>
+    <header style="display:flex;align-items:flex-start;gap:10px"><div><h1 style="margin:0">Watch Plan ready to arm</h1><small>Harden Stripe retry semantics · PR #184</small></div><div style="flex:1"></div><span class="wf-pill" style="color:var(--wf-warn)">High risk</span></header>
+    <div class="wf-box" style="display:flex;align-items:center;gap:10px"><div><small>TRIGGER</small><br /><strong>Vercel candidate ready after merge</strong></div><div style="flex:1"></div><button><span data-icon="edit" aria-label="Edit trigger"></span></button></div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;flex:1">
+      <section class="wf-card" style="padding:0"><div style="padding:10px 11px;border-bottom:1.4px solid var(--wf-line)"><strong>Agents</strong></div><div style="display:flex;padding:10px 11px;border-bottom:1.4px solid var(--wf-line)"><span>Impact</span><div style="flex:1"></div><span class="wf-pill">Required</span></div><div style="display:flex;padding:10px 11px;border-bottom:1.4px solid var(--wf-line)"><span>Resilience</span><div style="flex:1"></div><span class="wf-pill">Required</span></div><div style="display:flex;padding:10px 11px;border-bottom:1.4px solid var(--wf-line)"><span>Performance</span><div style="flex:1"></div><span class="wf-pill">Proposed</span></div><div style="display:flex;padding:10px 11px"><span>Product Health</span><div style="flex:1"></div><span class="wf-pill">Proposed</span></div></section>
+      <section class="wf-card" style="padding:0"><div style="padding:10px 11px;border-bottom:1.4px solid var(--wf-line)"><strong>Signals and conditions</strong></div><div style="padding:10px 11px;border-bottom:1.4px solid var(--wf-line)"><strong>EU checkout completion</strong><br /><small>PostHog · fail below -3pp for 2 windows</small></div><div style="padding:10px 11px;border-bottom:1.4px solid var(--wf-line)"><strong>Duplicate payment attempts</strong><br /><small>Stripe · fail above 0</small></div><div style="padding:10px 11px"><strong>Checkout p99</strong><br /><small>Vercel · fail above 2s for 2 windows</small></div></section>
+    </div>
+    <div class="wf-box"><small>COMPILATION RESULT</small><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px"><span class="wf-pill" style="color:var(--wf-ok)">2 phrases resolved</span><span class="wf-pill" style="color:var(--wf-ok)">0 unresolved</span><span class="wf-pill">Policy coverage complete</span></div><p class="wf-muted">On failure: hold candidate, preserve production, and offer a bounded Codex repair.</p></div>
+    <div style="display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1.4px solid var(--wf-line)"><small>Arming freezes v3. Later edits create v4.</small><div style="flex:1"></div><button>Save draft</button><button class="primary" data-goto="mission-running">Arm and replay trigger</button></div>
+  </main>
+</div>
+    `}
+  />
+
+  <PrototypeScreen
+    id="mission-running"
+    title="Mission running"
+    summary="Inspect the live work created from the armed contract."
+    surface="desktop"
+    html={`
+<div style="display:flex;height:100%;box-sizing:border-box;padding:16px;gap:0">
+  <aside style="width:166px;display:flex;flex-direction:column;gap:12px;padding:4px 14px 4px 2px;border-right:1.4px solid var(--wf-line)"><div><strong style="font-size:18px">Opssemble</strong><br /><small>acme / checkout-lab</small></div><nav style="display:flex;flex-direction:column;gap:7px;flex:1"><div style="padding:7px 9px">Changes</div><div class="wf-pill accent">Missions</div><div style="padding:7px 9px">Agents</div><div style="padding:7px 9px">Policies</div><div style="padding:7px 9px">Integrations</div></nav><div class="wf-box" style="padding:9px"><small>Production</small><br /><strong style="color:var(--wf-ok)">Healthy</strong></div></aside>
+  <main style="min-width:0;flex:1;display:flex;flex-direction:column;gap:13px;padding-left:16px">
+    <div style="display:flex;align-items:center;gap:8px"><button data-goto="changes-inbox"><span data-icon="arrowLeft" aria-label="Back"></span></button><span>Missions / #184 · contract v3</span><div style="flex:1"></div><span class="wf-pill accent">Running</span></div>
+    <header><h1 style="margin:0">Harden Stripe retry semantics</h1><small>Candidate dpl_8KL2 · commit a17c92e</small></header>
+    <div class="wf-card" style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;padding:10px"><div><small>1 CONTEXT</small><br /><strong style="color:var(--wf-ok)">Complete</strong></div><div><small>2 PLAN</small><br /><strong style="color:var(--wf-ok)">Contract v3</strong></div><div><small>3 EXECUTE</small><br /><strong>Running</strong></div><div><small>4 EVALUATE</small><br /><span class="wf-muted">Pending</span></div><div><small>5 DECISION</small><br /><span class="wf-muted">Pending</span></div></div>
+    <div style="display:grid;grid-template-columns:minmax(0,1.7fr) minmax(230px,1fr);gap:12px;flex:1">
+      <section style="display:flex;flex-direction:column;gap:8px"><div style="display:flex"><h2 style="margin:0">Agent work</h2><div style="flex:1"></div><small>2 of 4 complete</small></div><div class="wf-card" style="display:flex;gap:10px"><span style="color:var(--wf-ok)">●</span><div style="flex:1"><strong>Impact agent</strong><br /><small>Mapped Stripe, orders, fulfillment, and EU checkout</small></div><span class="wf-pill">Pass</span></div><button data-goto="resilience-evidence" style="padding:10px;display:flex;gap:10px;text-align:left;background:var(--wf-card);color:var(--wf-ink);border:1.4px solid var(--wf-accent);border-radius:var(--wf-radius);width:100%"><span>●</span><div style="flex:1"><strong>Resilience agent</strong><br /><small>Injecting a lost Stripe response · select to inspect</small></div><span class="wf-pill accent">Running</span></button><div class="wf-card" style="display:flex;gap:10px"><span>○</span><div style="flex:1"><strong>Performance agent</strong><br /><small>Waiting for equivalent traffic windows</small></div><span class="wf-pill">Queued</span></div><div class="wf-card" style="display:flex;gap:10px"><span>○</span><div style="flex:1"><strong>Product Health agent</strong><br /><small>Waiting for 200 EU checkout samples</small></div><span class="wf-pill">Queued</span></div></section>
+      <aside style="display:flex;flex-direction:column;gap:10px"><div class="wf-box"><small>CURRENT HYPOTHESIS</small><h3>Lost responses cause an unsafe payment retry</h3><p class="wf-muted">A completed Stripe request is retried without a stable idempotency key.</p></div><div class="wf-box"><small>CONTRACT GUARDRAILS</small><p>EU completion &gt;= -3pp</p><p>Checkout p99 &lt;= 2s</p><p>Duplicate attempts = 0</p></div></aside>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1.4px solid var(--wf-line)"><small>Mission running for 1m 18s</small><div style="flex:1"></div><button>Ask mission</button><button class="primary" data-goto="mission-decision">Complete demo evaluation</button></div>
+  </main>
+</div>
+    `}
+  />
+
+  <PrototypeScreen
+    id="resilience-evidence"
+    title="Resilience evidence"
+    summary="Inspect the contract hypothesis, tool activity, observations, and stop conditions."
+    surface="desktop"
+    html={`
+<div style="display:flex;height:100%;box-sizing:border-box;padding:16px;gap:0">
+  <aside style="width:166px;display:flex;flex-direction:column;gap:12px;padding:4px 14px 4px 2px;border-right:1.4px solid var(--wf-line)"><div><strong style="font-size:18px">Opssemble</strong><br /><small>acme / checkout-lab</small></div><nav style="display:flex;flex-direction:column;gap:7px;flex:1"><div style="padding:7px 9px">Changes</div><div class="wf-pill accent">Missions</div><div style="padding:7px 9px">Agents</div><div style="padding:7px 9px">Policies</div><div style="padding:7px 9px">Integrations</div></nav><div class="wf-box" style="padding:9px"><small>Contract</small><br /><strong>v3</strong></div></aside>
+  <main style="min-width:0;flex:1;display:flex;flex-direction:column;gap:12px;padding-left:16px">
+    <div style="display:flex;align-items:center;gap:8px"><button data-goto="mission-running"><span data-icon="arrowLeft" aria-label="Back"></span></button><span>Mission #184 / Resilience</span><div style="flex:1"></div><span class="wf-pill accent">Running</span></div>
+    <header><h1 style="margin:0">Resilience agent evidence</h1><small>Every claim resolves to an experiment, observation, or source record</small></header>
+    <div style="display:grid;grid-template-columns:minmax(0,1.3fr) minmax(250px,1fr);gap:12px;flex:1">
+      <section style="display:flex;flex-direction:column;gap:9px"><div class="wf-box"><small>CONTRACT HYPOTHESIS</small><h3>A lost Stripe response causes a second payment attempt.</h3><p class="wf-muted">Stop if duplicate attempts exceed zero or checkout p99 exceeds 2 seconds for two windows.</p></div><div class="wf-card"><small style="color:var(--wf-ok)">COMPLETED</small><br /><strong>query_greptile_context</strong><p class="wf-muted">Found a reverted retry change and payment runbook requirements.</p></div><div class="wf-card"><small style="color:var(--wf-ok)">COMPLETED</small><br /><strong>verify_rollback_target</strong><p class="wf-muted">Production deployment dpl_7FT9 remains healthy.</p></div><div class="wf-card" style="border-color:var(--wf-accent)"><small>RUNNING · 24s</small><br /><strong>run_candidate_fault_profile</strong><p class="wf-muted">Delay the first response after Stripe accepts the request.</p></div></section>
+      <aside style="display:flex;flex-direction:column;gap:10px"><div class="wf-box"><small>LIVE OBSERVATION</small><div style="display:flex;justify-content:space-between;padding:7px 0"><span>Payment attempts</span><strong>2</strong></div><div style="display:flex;justify-content:space-between;padding:7px 0;border-top:1.4px solid var(--wf-line)"><span>Checkout p99</span><strong>3.64s</strong></div><div style="display:flex;justify-content:space-between;padding:7px 0;border-top:1.4px solid var(--wf-line)"><span>EU completion</span><strong>-8.6pp</strong></div></div><div class="wf-box"><small>EVIDENCE</small><p><a href="#">Candidate request trace</a></p><p><a href="#">Stripe attempt pair</a></p><p><a href="#">PostHog funnel comparison</a></p></div></aside>
+    </div>
+    <div style="display:flex;gap:8px;padding-top:10px;border-top:1.4px solid var(--wf-line)"><button data-goto="mission-running">Back to mission</button><div style="flex:1"></div><button class="primary" data-goto="mission-decision">Complete evaluation</button></div>
+  </main>
+</div>
+    `}
+  />
+
+  <PrototypeScreen
+    id="mission-decision"
+    title="Mission decision"
+    summary="Review correlated evidence and approve a bounded Codex repair."
+    surface="desktop"
+    html={`
+<div x-data="{ confirm: false, queued: false }" style="display:flex;height:100%;box-sizing:border-box;padding:16px;gap:0;position:relative">
+  <aside style="width:166px;display:flex;flex-direction:column;gap:12px;padding:4px 14px 4px 2px;border-right:1.4px solid var(--wf-line)"><div><strong style="font-size:18px">Opssemble</strong><br /><small>acme / checkout-lab</small></div><nav style="display:flex;flex-direction:column;gap:7px;flex:1"><div style="padding:7px 9px">Changes</div><div class="wf-pill accent">Missions</div><div style="padding:7px 9px">Agents</div><div style="padding:7px 9px">Policies</div><div style="padding:7px 9px">Integrations</div></nav><div class="wf-box" style="padding:9px"><small>Production</small><br /><strong style="color:var(--wf-ok)">Unchanged</strong></div></aside>
+  <main style="min-width:0;flex:1;display:flex;flex-direction:column;gap:12px;padding-left:16px">
+    <div style="display:flex;align-items:center;gap:8px"><button data-goto="mission-running"><span data-icon="arrowLeft" aria-label="Back"></span></button><span>Missions / #184 · contract v3</span><div style="flex:1"></div><span class="wf-pill" style="color:var(--wf-warn)">Held</span></div>
+    <header><h1 style="margin:0">Harden Stripe retry semantics</h1><small>Evaluation complete · candidate dpl_8KL2</small></header>
+    <div x-show="queued" class="wf-box" style="border-color:var(--wf-ok)"><strong>Codex repair queued.</strong> The task contains the contract, reproduction, evidence, expected files, and acceptance tests.</div>
+    <div class="wf-box" style="border-color:var(--wf-warn);display:flex;align-items:center;gap:14px"><div style="width:42px;height:42px;border-radius:999px;background:var(--wf-accent-soft);display:flex;align-items:center;justify-content:center"><span data-icon="x" aria-label="Rejected"></span></div><div><small>POLICY DECISION</small><h2 style="margin:2px 0">Do not promote this candidate</h2><p class="wf-muted" style="margin:0">Production remains on the last healthy deployment.</p></div></div>
+    <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px"><div class="wf-box"><small>EU completion</small><br /><strong>-8.6pp</strong></div><div class="wf-box"><small>Checkout p99</small><br /><strong>+82%</strong></div><div class="wf-box"><small>Payment attempts</small><br /><strong>2</strong></div><div class="wf-box"><small>Recovery</small><br /><strong>4m 12s</strong></div></div>
+    <div style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(220px,1fr);gap:12px;flex:1"><section class="wf-card" style="padding:0"><div style="padding:11px;border-bottom:1.4px solid var(--wf-line)"><h2 style="margin:0">Agent verdicts</h2></div><div style="display:grid;grid-template-columns:1fr .7fr 2fr;gap:10px;padding:11px;border-bottom:1.4px solid var(--wf-line)"><strong>Resilience</strong><span class="wf-pill" style="color:var(--wf-warn)">Fail</span><small>Unsafe second payment attempt</small></div><div style="display:grid;grid-template-columns:1fr .7fr 2fr;gap:10px;padding:11px;border-bottom:1.4px solid var(--wf-line)"><strong>Performance</strong><span class="wf-pill" style="color:var(--wf-warn)">Fail</span><small>Candidate latency diverged</small></div><div style="display:grid;grid-template-columns:1fr .7fr 2fr;gap:10px;padding:11px"><strong>Product Health</strong><span class="wf-pill" style="color:var(--wf-warn)">Fail</span><small>EU checkout completion fell 8.6 points</small></div></section><aside class="wf-box"><small>ROOT CAUSE</small><h3>Retry without stable idempotency</h3><p class="wf-muted">The first request completed, its response was lost, and the candidate issued a second payment attempt.</p><p><strong>Rerun</strong><br /><small>The repair candidate will execute the same contract v3.</small></p></aside></div>
+    <div style="display:flex;align-items:center;gap:8px;padding-top:10px;border-top:1.4px solid var(--wf-line)"><strong>Next action</strong><div style="flex:1"></div><button>Create Linear issue</button><button>Reject candidate</button><button class="primary" @click="confirm = true">Repair with Codex</button></div>
+  </main>
+  <div x-show="confirm && !queued" style="position:absolute;inset:0;background:var(--wf-paper);display:flex;align-items:center;justify-content:center;padding:40px">
+    <div class="wf-card" style="max-width:440px;display:flex;flex-direction:column;gap:12px"><div style="display:flex;align-items:center"><h2 style="margin:0">Approve Codex repair</h2><div style="flex:1"></div><button @click="confirm = false"><span data-icon="x" aria-label="Close"></span></button></div><p>Codex will work only in <strong>acme/checkout-lab</strong> and open a repair PR. It cannot deploy or access production credentials.</p><div class="wf-box"><small>ACCEPTANCE CRITERIA</small><p>Stable Stripe idempotency key</p><p>Bounded retry and total deadline</p><p>Pass contract v3 without changing its thresholds</p></div><div style="display:flex;gap:8px"><button @click="confirm = false">Cancel</button><div style="flex:1"></div><button class="primary" @click="queued = true; confirm = false">Approve repair</button></div></div>
+  </div>
+</div>
+    `}
+  />
+
+  <PrototypeTransition id="open-change" from="changes-inbox" to="watch-plan-draft" label="Open Watch Plan" trigger="Select PR #184" />
+  <PrototypeTransition id="compile-requirement" from="watch-plan-draft" to="watch-plan-ready" label="Compile requirement" trigger="Compile requirement" />
+  <PrototypeTransition id="arm-and-trigger" from="watch-plan-ready" to="mission-running" label="Arm and trigger" trigger="Arm and replay trigger" />
+  <PrototypeTransition id="inspect-resilience" from="mission-running" to="resilience-evidence" label="Inspect Resilience" trigger="Select Resilience agent" />
+  <PrototypeTransition id="finish-evaluation" from="mission-running" to="mission-decision" label="Complete evaluation" trigger="Complete demo evaluation" />
+  <PrototypeTransition id="evidence-to-decision" from="resilience-evidence" to="mission-decision" label="Complete evaluation" trigger="Complete evaluation" />
+</Prototype>

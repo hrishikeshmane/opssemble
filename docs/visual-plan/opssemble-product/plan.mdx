@@ -1,0 +1,1109 @@
+---
+title: "Opssemble Product and UX Plan"
+brief: "A hackathon-ready plan for a Next.js release-operations command center that turns pull requests into explicit Watch Plans and operates them through deployment and feature-flag rollout."
+version: 3
+planId: "plan_opssemble_product"
+source: "agent-native-plan"
+kind: "plan"
+localOnly: true
+---
+
+<RichText id="recommendation">
+
+## Recommendation
+
+Build **Opssemble** around one continuous flow: **Change -> Watch Plan -> Release Mission**.
+
+The **Changes** screen is the pre-merge control surface. It imports pull requests from a connected GitHub repository, scores their operational risk, proposes the agents and signals that should watch them, and lets a developer add requirements in plain language. Opssemble compiles that input into a structured Watch Plan that the developer can inspect and arm.
+
+After merge, candidate deployment, or feature-flag dial-up, the armed plan becomes a durable **Release Mission**. The mission screen answers **what the agents are doing, what evidence they found, and what policy permits next**. Chat remains a secondary investigation surface. Promote, rollback, feature-flag restoration, and repair remain explicit commands with policy and human approval.
+
+The hackathon MVP should prove one complete path:
+
+1. A connected GitHub PR appears with an automatically proposed Watch Plan.
+2. The developer adds "monitor EU checkout completion and duplicate Stripe attempts" and arms the plan.
+3. Merge plus Vercel candidate readiness triggers a Release Mission.
+4. Resilience, Performance, and Product Health agents evaluate the candidate.
+5. Deterministic policy rejects the candidate; Codex receives a bounded repair task and the same contract reruns to green.
+
+</RichText>
+
+<Callout id="product-decision" tone="decision">
+
+The product has two durable objects. A **Release Contract** stores operational intent before anything ships; a **Release Mission** is one execution of that contract after a merge, deployment, or feature-flag trigger. One PR can therefore produce multiple missions over its lifetime.
+
+</Callout>
+
+<RichText id="problem-statement">
+
+## Problem Statement
+
+Coding agents can now take a ticket through implementation, tests, and a mergeable PR. But operational intent is rarely captured before that PR ships. Teams do not have one place to state which customer journeys, dependencies, technical signals, and business outcomes must remain healthy as the change moves through deployment and exposure.
+
+After merge, the remaining work fragments across deployment systems, observability, chaos tools, product analytics, security scanners, incident response, and backlog management. No existing surface owns the complete question: **what must we watch for this change, and did it remain safe as it moved through real deployment stages and customer exposure?**
+
+Teams need a system that is:
+
+- **Change-centric:** every conclusion is attached to the PR, deployment, release SHA, or flag rollout that caused it.
+- **Intent-aware:** every monitored signal and action traces back to an inferred policy, repository rule, or explicit developer requirement.
+- **Evidence-first:** agent claims resolve to measurements, traces, logs, screenshots, tests, or external records.
+- **Policy-controlled:** models propose; deterministic policy and human approvals authorize.
+- **Lifecycle-complete:** the system can hold, restore, repair, rerun, and create follow-up work instead of stopping at an alert.
+
+</RichText>
+
+<Table
+  id="product-primitives"
+  columns={["Primitive", "Purpose", "MVP behavior"]}
+  rows={[
+    [
+      "Change",
+      "Imported PR and the code/configuration context it represents",
+      "GitHub PR row with risk, plan state, trigger, and selected-agent summary",
+    ],
+    [
+      "Release Contract",
+      "Versioned operational intent prepared before a trigger",
+      "Structured agents, signals, thresholds, observation windows, actions, and unresolved requirements",
+    ],
+    [
+      "Release Mission",
+      "One durable execution of an armed contract",
+      "Created by merge, Vercel candidate readiness, deployment promotion, or PostHog dial-up",
+    ],
+    [
+      "Agent Run",
+      "One specialist evaluation inside a mission",
+      "Structured status, verdict, confidence, findings, metrics, and evidence",
+    ],
+    [
+      "Evidence",
+      "Inspectable proof behind an agent result",
+      "Metric snapshot, log excerpt, test result, trace, commit, or external link",
+    ],
+    [
+      "Decision",
+      "Policy evaluation over all critical results",
+      "Promote, hold, reject, restore, repair, or require approval",
+    ],
+    [
+      "Action",
+      "Side effect issued after policy and approval",
+      "Vercel promotion, PostHog restore, Linear issue, or Codex repair task",
+    ],
+  ]}
+/>
+
+<RichText id="experience-model">
+
+## Experience Model
+
+The interface has three levels:
+
+1. **Changes inbox:** connected-repository PRs with operational risk and Watch Plan readiness.
+2. **Watch Plan workspace:** the proposed agents, signals, triggers, guardrails, custom monitoring requirements, and unresolved mappings for one PR.
+3. **Mission control and detail:** active executions sorted by urgency, with agent work, evidence, policy state, and the next permitted action.
+
+The PR is the familiar intake surface, not the lifecycle boundary. Once a plan is armed, the Release Contract survives the PR and can generate a candidate-deployment mission, a production-promotion mission, and later feature-flag dial-up missions. This preserves deployment-console scanability while preventing the product from becoming a transcript or a GitHub review clone.
+
+</RichText>
+
+<Table
+  id="screen-map"
+  columns={["Route", "Primary question", "Key interaction"]}
+  rows={[
+    [
+      "/changes",
+      "Which PRs are operationally covered before they ship?",
+      "Filter connected GitHub PRs by risk and plan state; open the generated Watch Plan",
+    ],
+    [
+      "/changes/[changeId]",
+      "What will Opssemble watch, when will it run, and what may it do?",
+      "Review selected agents, add a monitoring prompt, resolve mappings, and arm the Release Contract",
+    ],
+    [
+      "/missions",
+      "Which releases need attention?",
+      "Filter by state, source, repository, risk, and verdict; open a mission",
+    ],
+    [
+      "/missions/[missionId]",
+      "What is happening and what may happen next?",
+      "Inspect lifecycle, agent runs, evidence, policy, and approve an action",
+    ],
+    [
+      "/agents",
+      "Which agents exist and when do they run?",
+      "Inspect triggers, tools, permissions, output contract, health, and last run",
+    ],
+    [
+      "/policies",
+      "What blocks promotion or forces recovery?",
+      "Review guardrails and approval requirements; editing is post-MVP",
+    ],
+    [
+      "/integrations",
+      "Can Opssemble reach every system it depends on?",
+      "Inspect connection health, environment, credential scope, and last event",
+    ],
+  ]}
+/>
+
+<RichText id="ux-principles">
+
+### UX Principles
+
+- Use a quiet, operational shell: compact sidebar, restrained status color, dense tables, predictable detail panels.
+- Make Watch Plan state visible in the PR list: `Not required`, `Draft`, `Needs input`, `Ready`, or `Armed`.
+- Compile freeform monitoring requests into visible structured clauses; never execute an opaque prompt as production policy.
+- Explain why each agent and signal was selected: organization policy, changed code path, dependency, historical incident, or developer request.
+- Require all unknown metric mappings and unsupported actions to be resolved before a plan can be armed.
+- Lead with the release outcome and customer impact before the agent's narrative.
+- Use status chips only for finite states; use text and numbers for evidence.
+- Keep agent activity collapsible. The default view shows a summary, latest action, elapsed time, and verdict.
+- Open tool inputs, outputs, logs, and artifacts on demand in a drawer or evidence panel.
+- Keep the decision bar visible at the bottom of the mission page.
+- Require an approval surface that states target, blast radius, rollback target, and policy result before a production-affecting action.
+
+</RichText>
+
+<RichText id="architecture-heading">
+
+## Technical Architecture
+
+</RichText>
+
+<Diagram
+  id="system-architecture"
+  caption="Pull requests become versioned Release Contracts; triggers execute those contracts as evidence-backed Release Missions."
+>
+
+```html
+<div class="diagram-panel diagram-stack" data-rough>
+  <div class="diagram-row diagram-sources">
+    <div class="diagram-card"><strong>Change sources</strong><span class="diagram-muted">GitHub PR inbox and diff</span><span class="diagram-muted">Vercel deployment events</span><span class="diagram-muted">PostHog flag requests</span></div>
+    <div class="diagram-card"><strong>Runtime evidence</strong><span class="diagram-muted">Vercel and Modal</span><span class="diagram-muted">Stripe test mode</span><span class="diagram-muted">AWS and CloudWatch</span></div>
+    <div class="diagram-card"><strong>Context and actions</strong><span class="diagram-muted">Greptile Knowledge Base</span><span class="diagram-muted">Linear</span><span class="diagram-muted">Codex SDK</span></div>
+  </div>
+  <div class="diagram-arrow">context, policy, and developer intent</div>
+  <div class="diagram-card diagram-control">
+    <strong>Opssemble control plane</strong>
+    <div class="diagram-grid">
+      <div class="diagram-node">Change and risk analyzer</div>
+      <div class="diagram-node">Watch Plan compiler</div>
+      <div class="diagram-node">Versioned Release Contract</div>
+      <div class="diagram-node">Durable workflow</div>
+      <div class="diagram-node">Mission and action ledger</div>
+    </div>
+  </div>
+  <div class="diagram-arrow">merge, candidate ready, promotion, or flag dial-up</div>
+  <div class="diagram-row">
+    <div class="diagram-card diagram-wide"><strong>AI SDK specialist agents</strong><div class="diagram-grid"><div class="diagram-pill">Impact</div><div class="diagram-pill">Resilience</div><div class="diagram-pill">Performance</div><div class="diagram-pill">Product Health</div><div class="diagram-pill">Security</div><div class="diagram-pill">Repair</div></div><span class="diagram-muted">Typed tools and Zod-validated outputs</span></div>
+    <div class="diagram-card"><strong>Deterministic policy</strong><span class="diagram-muted">PASS / WARN / FAIL / UNKNOWN</span><span class="diagram-muted">approval and stop conditions</span><span class="diagram-muted">idempotent action ledger</span></div>
+  </div>
+  <div class="diagram-arrow">evidence-backed decision</div>
+  <div class="diagram-row diagram-actions">
+    <div class="diagram-node">Promote or reject Vercel candidate</div>
+    <div class="diagram-node">Restore PostHog percentage</div>
+    <div class="diagram-node">Create Linear backlog</div>
+    <div class="diagram-node">Dispatch Codex repair</div>
+  </div>
+</div>
+```
+
+```css
+.diagram-stack { display:flex; flex-direction:column; gap:14px; padding:18px; }
+.diagram-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
+.diagram-sources { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.diagram-actions { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.diagram-card { display:flex; flex-direction:column; gap:7px; }
+.diagram-control { gap:12px; }
+.diagram-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.diagram-wide { min-width:0; }
+.diagram-arrow { text-align:center; color:var(--wf-muted); padding:3px; }
+```
+
+</Diagram>
+
+<RichText id="runtime-separation">
+
+### Runtime Separation
+
+Use the AI SDK for change analysis, monitoring-prompt compilation, typed tools, specialist loops, structured outputs, and the optional mission copilot. The Watch Plan compiler produces a versioned schema; it does not store a freeform prompt as executable policy. Use Vercel Workflow for durable orchestration, waits, retries, and resumability. Persist every contract version and mission transition independently of the UI stream.
+
+This separation is important:
+
+- A browser refresh must not stop or erase a mission.
+- Editing a Watch Plan must create a new contract version without changing already-running missions.
+- A model response must not be the source of truth for action authorization.
+- The mission page must be reconstructable from database events.
+- A failed external call must be retryable without repeating a destructive action.
+
+</RichText>
+
+<Table
+  id="stack-decisions"
+  columns={["Layer", "Choice", "Reason"]}
+  rows={[
+    [
+      "Web application",
+      "Next.js App Router + TypeScript on Vercel",
+      "Server Components for reads, Route Handlers for webhooks/streams, small Client Component islands",
+    ],
+    [
+      "Operational UI",
+      "shadcn/ui + Tailwind + Lucide",
+      "Dense accessible primitives without inventing a bespoke design system",
+    ],
+    [
+      "Agent UI",
+      "AI Elements",
+      "Composable Task, Tool, TestResults, Artifact, Conversation, and Confirmation surfaces",
+    ],
+    [
+      "Agent runtime",
+      "Vercel AI SDK ToolLoopAgent + typed tools + structured output",
+      "Reusable specialist definitions and end-to-end typed tool parts",
+    ],
+    [
+      "Durability",
+      "Vercel Workflow",
+      "Mission steps can pause, retry, resume, and survive deployments",
+    ],
+    [
+      "Models",
+      "OpenAI through AI Gateway; model ID selected from the live gateway catalog",
+      "Central credentials, observability, and a provider-neutral runtime boundary",
+    ],
+    [
+      "Repair",
+      "OpenAI Codex SDK in a bounded server-side runner",
+      "Programmatic repair thread with repository scope, evidence, acceptance criteria, and sandbox limits",
+    ],
+    [
+      "Persistence",
+      "Neon Postgres + Drizzle ORM",
+      "Versioned release contracts, relational mission state, append-only events, JSON evidence payloads, and simple Vercel deployment",
+    ],
+    [
+      "Validation",
+      "Vitest + Playwright + deterministic demo fixtures",
+      "Policy and normalization tests plus one rehearsable end-to-end release path",
+    ],
+  ]}
+/>
+
+<RichText id="nextjs-boundaries">
+
+### Next.js Boundaries
+
+- Pages and layouts are Server Components by default.
+- Change filters, Watch Plan editing, mission activity, dialogs, and the copilot are focused Client Components.
+- Route Handlers own GitHub, Vercel, and provider webhooks because they need raw request verification.
+- Server Actions own authenticated dashboard commands such as compile requirement, arm contract, rerun, approve, reject, and restore.
+- Node runtime is the default because provider SDKs, database drivers, and Codex execution are server-side.
+- Webhook handlers acknowledge quickly, store a normalized event, and start or signal a workflow. They do not run the full agent swarm inline.
+
+</RichText>
+
+<RichText id="ai-elements-heading">
+
+## AI Elements and shadcn Component Map
+
+</RichText>
+
+<Table
+  id="component-map"
+  columns={["Product surface", "Component choice", "Usage"]}
+  rows={[
+    [
+      "App shell and navigation",
+      "shadcn Sidebar, Breadcrumb, Command, DropdownMenu",
+      "Repository selector, route navigation, search, user/integration menu",
+    ],
+    [
+      "Changes inbox",
+      "shadcn Table, Tabs, Badge, Tooltip, Skeleton",
+      "GitHub PR list with risk, Watch Plan state, trigger, selected agents, and updated time",
+    ],
+    [
+      "Watch Plan workspace",
+      "shadcn Sheet, Accordion, Command, Textarea + AI Elements PromptInput",
+      "Inspect agent rationale and structured clauses; add plain-language monitoring requirements and resolve mappings",
+    ],
+    [
+      "Mission queue",
+      "shadcn Table, Tabs, Badge, Tooltip, Skeleton",
+      "Dense release list with stable columns and filter states",
+    ],
+    [
+      "Lifecycle and agent progress",
+      "AI Elements Task and Queue",
+      "Show planned, running, completed, skipped, and failed work without exposing raw prompts",
+    ],
+    [
+      "Tool execution",
+      "AI Elements Tool",
+      "Expandable typed inputs, output, duration, and error for Greptile, Vercel, PostHog, AWS, Stripe, and load tools",
+    ],
+    [
+      "Evidence",
+      "AI Elements Artifact, TestResults, Commit, and WebPreview",
+      "Logs, test reports, code changes, graphs, screenshots, and candidate URL preview",
+    ],
+    [
+      "High-impact action",
+      "AI Elements Confirmation + shadcn AlertDialog",
+      "Approval request with target, blast radius, stop conditions, rollback target, and policy result",
+    ],
+    [
+      "Mission copilot",
+      "AI Elements Conversation, Message, PromptInput, Reasoning",
+      "Secondary 'Ask this mission' drawer; Reasoning contains concise rationale summaries, never hidden chain-of-thought",
+    ],
+    [
+      "Agent registry",
+      "shadcn DataTable, Sheet, Switch, Progress",
+      "Inspect capability, trigger policy, tools, permissions, health, and recent effectiveness",
+    ],
+  ]}
+/>
+
+<RichText id="data-contract-heading">
+
+## Data and Runtime Contracts
+
+</RichText>
+
+<DataModel
+  id="mission-data-model"
+  entities={[
+    {
+      id: "repositories",
+      name: "repositories",
+      fields: [
+        { name: "id", type: "uuid", pk: true },
+        { name: "provider_external_id", type: "text" },
+        { name: "full_name", type: "text" },
+        { name: "default_branch", type: "text" },
+      ],
+    },
+    {
+      id: "changes",
+      name: "changes",
+      fields: [
+        { name: "id", type: "uuid", pk: true },
+        { name: "repository_id", type: "uuid", fk: "repositories.id" },
+        { name: "provider_number", type: "integer" },
+        { name: "title", type: "text" },
+        { name: "head_sha", type: "text" },
+        { name: "state", type: "enum" },
+        { name: "merged_at", type: "timestamp", nullable: true },
+      ],
+    },
+    {
+      id: "release_contracts",
+      name: "release_contracts",
+      fields: [
+        { name: "id", type: "uuid", pk: true },
+        { name: "change_id", type: "uuid", fk: "changes.id", nullable: true },
+        { name: "version", type: "integer" },
+        { name: "state", type: "enum" },
+        { name: "risk_level", type: "enum" },
+        { name: "trigger_spec", type: "jsonb" },
+        { name: "agent_plan", type: "jsonb" },
+        { name: "monitor_spec", type: "jsonb" },
+        { name: "unresolved_items", type: "jsonb" },
+        { name: "armed_at", type: "timestamp", nullable: true },
+      ],
+    },
+    {
+      id: "missions",
+      name: "missions",
+      fields: [
+        { name: "id", type: "uuid", pk: true },
+        { name: "repository_id", type: "uuid", fk: "repositories.id" },
+        { name: "release_contract_id", type: "uuid", fk: "release_contracts.id" },
+        { name: "source_type", type: "enum" },
+        { name: "source_ref", type: "jsonb" },
+        { name: "state", type: "enum" },
+        { name: "risk_level", type: "enum" },
+        { name: "policy_snapshot", type: "jsonb" },
+      ],
+    },
+    {
+      id: "agent_runs",
+      name: "agent_runs",
+      fields: [
+        { name: "id", type: "uuid", pk: true },
+        { name: "mission_id", type: "uuid", fk: "missions.id" },
+        { name: "agent_key", type: "text" },
+        { name: "state", type: "enum" },
+        { name: "verdict", type: "enum", nullable: true },
+        { name: "output", type: "jsonb", nullable: true },
+      ],
+    },
+    {
+      id: "mission_events",
+      name: "mission_events",
+      fields: [
+        { name: "id", type: "bigserial", pk: true },
+        { name: "mission_id", type: "uuid", fk: "missions.id" },
+        { name: "event_type", type: "text" },
+        { name: "actor", type: "text" },
+        { name: "payload", type: "jsonb" },
+        { name: "created_at", type: "timestamp" },
+      ],
+    },
+    {
+      id: "evidence",
+      name: "evidence",
+      fields: [
+        { name: "id", type: "uuid", pk: true },
+        { name: "agent_run_id", type: "uuid", fk: "agent_runs.id" },
+        { name: "kind", type: "enum" },
+        { name: "summary", type: "text" },
+        { name: "uri", type: "text", nullable: true },
+        { name: "payload", type: "jsonb", nullable: true },
+      ],
+    },
+    {
+      id: "decisions",
+      name: "decisions",
+      fields: [
+        { name: "id", type: "uuid", pk: true },
+        { name: "mission_id", type: "uuid", fk: "missions.id" },
+        { name: "decision", type: "enum" },
+        { name: "policy_result", type: "jsonb" },
+        { name: "approval_state", type: "enum" },
+        { name: "executed_action_id", type: "text", nullable: true },
+      ],
+    },
+    {
+      id: "integrations",
+      name: "integrations",
+      fields: [
+        { name: "id", type: "uuid", pk: true },
+        { name: "provider", type: "enum" },
+        { name: "environment", type: "text" },
+        { name: "secret_ref", type: "text" },
+        { name: "health", type: "enum" },
+      ],
+    },
+  ]}
+  relations={[
+    { from: "repositories", to: "changes", kind: "1-n" },
+    { from: "changes", to: "release_contracts", kind: "1-n" },
+    { from: "repositories", to: "missions", kind: "1-n" },
+    { from: "release_contracts", to: "missions", kind: "1-n" },
+    { from: "missions", to: "agent_runs", kind: "1-n" },
+    { from: "missions", to: "mission_events", kind: "1-n" },
+    { from: "agent_runs", to: "evidence", kind: "1-n" },
+    { from: "missions", to: "decisions", kind: "1-n" },
+  ]} 
+/>
+
+<Code
+  id="watch-plan-contract"
+  filename="lib/contracts/release-contract.ts"
+  language="ts"
+  caption="The monitoring prompt is compiled into explicit, reviewable clauses before a contract can be armed."
+  code={"export const releaseContractSchema = z.object({\n  version: z.number().int().positive(),\n  trigger: z.discriminatedUnion(\"type\", [\n    z.object({ type: z.literal(\"vercel_candidate_ready\"), projectId: z.string() }),\n    z.object({\n      type: z.literal(\"posthog_flag_change\"),\n      flagKey: z.string(),\n      from: z.number(),\n      to: z.number(),\n    }),\n  ]),\n  agents: z.array(z.object({\n    key: z.enum([\"impact\", \"resilience\", \"performance\", \"product-health\", \"security\"]),\n    required: z.boolean(),\n    reason: z.string(),\n  })),\n  signals: z.array(z.object({\n    provider: z.enum([\"posthog\", \"stripe\", \"vercel\", \"cloudwatch\"]),\n    metric: z.string(),\n    scope: z.record(z.string(), z.string()),\n  })),\n  conditions: z.array(z.object({\n    signal: z.string(),\n    operator: z.enum([\"gt\", \"gte\", \"lt\", \"lte\", \"eq\"]),\n    threshold: z.number(),\n    windows: z.number().int().positive(),\n  })),\n  actions: z.array(z.object({\n    on: z.enum([\"pass\", \"fail\", \"unknown\"]),\n    action: z.enum([\"hold\", \"promote\", \"restore_flag\", \"repair\", \"require_approval\"]),\n  })),\n  unresolved: z.array(z.object({ phrase: z.string(), reason: z.string() })),\n});\n"}
+/>
+
+<Code
+  id="agent-output-contract"
+  filename="lib/agents/contracts.ts"
+  language="ts"
+  caption="Every specialist returns the same decision-ready envelope; agent-specific measurements live inside findings and metrics."
+  code={"export const agentVerdictSchema = z.object({\n  verdict: z.enum([\"pass\", \"warn\", \"fail\", \"unknown\"]),\n  confidence: z.number().min(0).max(1),\n  summary: z.string().max(500),\n  findings: z.array(z.object({\n    severity: z.enum([\"info\", \"warning\", \"critical\"]),\n    title: z.string(),\n    detail: z.string(),\n    evidenceIds: z.array(z.string()),\n  })),\n  metrics: z.record(z.string(), z.object({\n    value: z.number(),\n    unit: z.string(),\n    baseline: z.number().optional(),\n    threshold: z.number().optional(),\n  })),\n  proposedActions: z.array(z.string()),\n});\n"}
+/>
+
+<RichText id="state-machines">
+
+### State Machines
+
+**Release Contract:** `draft -> analyzing -> needs_input | ready -> armed -> superseded | disabled`
+
+**Mission:** `queued -> planning -> running -> evaluating -> awaiting_approval -> passed | held | rejected | restored | failed`
+
+**Agent run:** `queued -> running -> waiting_for_tool | waiting_for_approval -> succeeded | failed | skipped | canceled`
+
+**Verdict:** `pass | warn | fail | unknown`
+
+An armed contract is immutable. Editing creates a new version; already-running missions retain the exact agents, signals, thresholds, and policy snapshot they began with.
+
+`unknown` is a first-class result. Missing telemetry, insufficient samples, unresolved metric mappings, or an unreachable provider can never silently become `pass`. A contract with unresolved items cannot enter `armed`.
+
+</RichText>
+
+<Table
+  id="agent-roster"
+  columns={["Agent", "Runs when", "Primary tools", "Decision output"]}
+  rows={[
+    [
+      "Impact",
+      "Every code-backed mission",
+      "GitHub diff, Greptile KB, repository metadata",
+      "Affected components, dependencies, journeys, risk, and selected agents",
+    ],
+    [
+      "Resilience",
+      "External calls, queues, persistence, retries, or recovery paths changed",
+      "Signed preview faults, AWS FIS adapter, traffic runner",
+      "Hypothesis, stop condition, recovery result, and failure mode",
+    ],
+    [
+      "Performance",
+      "Hot path or resource behavior changed",
+      "Modal/k6, Vercel telemetry, CloudWatch",
+      "Baseline/candidate deltas for latency, throughput, errors, and saturation",
+    ],
+    [
+      "Product Health",
+      "Customer journey or flag exposure changed",
+      "PostHog funnels, Stripe test records",
+      "Variant/release deltas with minimum sample and observation-window status",
+    ],
+    [
+      "Security",
+      "Auth, API boundary, dependency, or sensitive path changed",
+      "Targeted tests and scanner adapters",
+      "Exploitability, affected surface, evidence, and remediation",
+    ],
+    [
+      "Deployment",
+      "Every mission at decision time",
+      "Policy engine, Vercel, PostHog",
+      "Permitted next actions and approval requirements",
+    ],
+    [
+      "Repair",
+      "A failed mission has a bounded reproducible cause",
+      "Codex SDK, GitHub, test runner",
+      "Repair task, branch/PR, tests, and rerun link",
+    ],
+  ]}
+/>
+
+<RichText id="file-map-heading">
+
+## Proposed Application Shape
+
+The Opssemble codebase is net-new. Keep one Next.js application for the hackathon and separate the domain through folders and interfaces rather than deploying multiple services.
+
+</RichText>
+
+<FileTree
+  id="proposed-file-tree"
+  entries={[
+    {
+      path: "app/(app)/layout.tsx",
+      change: "added",
+      note: "Shared operational shell, repository selector, sidebar, and command menu",
+    },
+    {
+      path: "app/(app)/changes/page.tsx",
+      change: "added",
+      note: "Server-rendered GitHub PR inbox with risk and Watch Plan status",
+    },
+    {
+      path: "app/(app)/changes/[changeId]/page.tsx",
+      change: "added",
+      note: "PR context, agent selection rationale, structured Watch Plan, custom requirement input, and Arm action",
+    },
+    {
+      path: "app/(app)/missions/page.tsx",
+      change: "added",
+      note: "Server-rendered mission queue and filters",
+    },
+    {
+      path: "app/(app)/missions/[missionId]/page.tsx",
+      change: "added",
+      note: "Mission header, lifecycle, agent runs, evidence summary, and decision bar",
+    },
+    {
+      path: "app/(app)/agents/page.tsx",
+      change: "added",
+      note: "Agent registry and health",
+    },
+    {
+      path: "app/(app)/integrations/page.tsx",
+      change: "added",
+      note: "Provider health, scope, environment, and last event",
+    },
+    {
+      path: "app/api/webhooks/github/route.ts",
+      change: "added",
+      note: "Verify signature, upsert PR state, and signal armed contracts when merge events arrive",
+    },
+    {
+      path: "app/api/webhooks/vercel/route.ts",
+      change: "added",
+      note: "Correlate candidate deployment and readiness events",
+    },
+    {
+      path: "app/api/missions/[missionId]/copilot/route.ts",
+      change: "added",
+      note: "AI SDK UI stream for the secondary mission copilot",
+    },
+    {
+      path: "components/changes/change-table.tsx",
+      change: "added",
+      note: "Dense PR list with risk, contract state, trigger, agents, and update columns",
+    },
+    {
+      path: "components/contracts/watch-plan-editor.tsx",
+      change: "added",
+      note: "Structured agents, signals, conditions, actions, unresolved items, and requirement composer",
+    },
+    {
+      path: "components/missions/mission-table.tsx",
+      change: "added",
+      note: "Client-side sorting, filtering, and row navigation",
+    },
+    {
+      path: "components/missions/agent-run-list.tsx",
+      change: "added",
+      note: "AI Elements task/tool/evidence rendering from persisted events",
+    },
+    {
+      path: "components/missions/decision-bar.tsx",
+      change: "added",
+      note: "Policy result, approval surface, and permitted actions",
+    },
+    {
+      path: "lib/contracts/compiler.ts",
+      change: "added",
+      note: "Combines policy, diff context, Greptile context, and custom requirements into a validated contract version",
+    },
+    {
+      path: "lib/contracts/schema.ts",
+      change: "added",
+      note: "Release Contract, trigger, signal, condition, action, and unresolved-item schemas",
+    },
+    {
+      path: "lib/agents/",
+      change: "added",
+      note: "Specialist ToolLoopAgent definitions, prompts, schemas, and typed tools",
+    },
+    {
+      path: "lib/integrations/",
+      change: "added",
+      note: "GitHub, Vercel, PostHog, Stripe, AWS, Greptile, Linear, Modal, and Codex adapters",
+    },
+    {
+      path: "lib/missions/policy.ts",
+      change: "added",
+      note: "Pure deterministic policy evaluation with table-driven tests",
+    },
+    {
+      path: "lib/workflows/release-mission.ts",
+      change: "added",
+      note: "Durable mission orchestration and idempotent action steps",
+    },
+    {
+      path: "db/schema.ts",
+      change: "added",
+      note: "Repository, change, versioned contract, mission, agent run, event, evidence, decision, and integration tables",
+    },
+    {
+      path: "fixtures/demo-mission.ts",
+      change: "added",
+      note: "Deterministic PR, generated Watch Plan, custom requirement, mission, and timed event replay",
+    },
+  ]}
+/>
+
+<RichText id="integration-contracts">
+
+## Integration Contracts
+
+</RichText>
+
+<Table
+  id="integration-table"
+  columns={["Provider", "Inbound", "Outbound", "Safety boundary"]}
+  rows={[
+    [
+      "GitHub",
+      "Connected-repository PR list, diff, merge, check, and commit metadata",
+      "Check result, Watch Plan summary comment, repair branch/PR",
+      "GitHub App permissions limited to selected repository",
+    ],
+    [
+      "Vercel",
+      "Deployment created/ready/error events",
+      "Promote candidate or restore prior production deployment",
+      "Immutable deployment IDs and idempotency key per action",
+    ],
+    [
+      "PostHog",
+      "Funnel/flag metrics queried by release and variant",
+      "Opssemble-initiated 10% -> 50% -> restore sequence",
+      "Snapshot full flag config before change; restore on fail or unknown",
+    ],
+    [
+      "Stripe",
+      "Test-mode payment attempts and idempotency evidence",
+      "No production mutations",
+      "Test account only; redact secrets and payment details",
+    ],
+    [
+      "AWS",
+      "CloudWatch metrics and experiment status",
+      "Optional bounded FIS experiment",
+      "Sandbox account, explicit targets, stop conditions, and recovery check",
+    ],
+    [
+      "Greptile",
+      "Knowledge Base context and historical code/revert information",
+      "Optional validated operational context for future review",
+      "Treat unavailable APIs as optional enrichment, never a mission blocker",
+    ],
+    [
+      "Linear",
+      "Issue state for linked remediation",
+      "Create evidence-backed issue",
+      "Idempotent external key prevents duplicate backlog",
+    ],
+    [
+      "Codex",
+      "Repository plus bounded evidence package",
+      "Repair branch, tests, and PR",
+      "Workspace-write sandbox, allowlisted repository, no deployment credentials",
+    ],
+  ]}
+/>
+
+<RichText id="policy-section">
+
+## Policy and Action Safety
+
+The LLM may propose agents, compile a developer's monitoring request, select experiments, explain causal chains, and propose actions. It may not silently remove policy-required coverage, treat unresolved text as a valid metric, arm a contract, or directly mutate production.
+
+The policy engine evaluates normalized inputs:
+
+- Organization-required agents are present for the detected change class.
+- Every custom monitoring phrase resolves to a supported signal, condition, or informational note.
+- The contract version is explicitly armed and matches the trigger event.
+- Required agents completed.
+- No critical verdict is `fail` or `unknown`.
+- Measurements satisfy mission thresholds.
+- Minimum sample sizes and observation windows are complete.
+- Rollback or restore target exists and was verified.
+- Experiment blast radius and stop conditions are present.
+- Required human approval is recorded.
+- The same external action has not already executed.
+
+Every action writes an action-ledger record before calling the provider, then records the provider result. Retried workflow steps read that ledger first.
+
+</RichText>
+
+<RichText id="hackathon-scope">
+
+## Hackathon MVP
+
+### Must Ship
+
+1. Connected GitHub PR inbox with risk, Watch Plan state, trigger, and proposed-agent summary.
+2. Watch Plan workspace that shows why each agent and signal was selected.
+3. Custom monitoring input compiled into visible structured clauses, including an unresolved state.
+4. Explicit `Arm` action that freezes a versioned Release Contract.
+5. Merge/Vercel trigger that creates a correlated Release Mission from the armed contract.
+6. Mission detail with a live/replayed agent timeline and inspectable tool/evidence rows.
+7. Real Resilience, Performance, and Product Health result contracts.
+8. Deterministic rejection, bounded `Repair with Codex`, and a green rerun.
+9. Integration health for GitHub, Vercel, PostHog, Stripe, AWS, Greptile, Linear, and Codex, even when some are demo fixtures.
+
+### Strictly Deferred
+
+- Billing, team administration, and broad multi-tenancy.
+- User-auth polish beyond a private demo deployment.
+- Generic policy authoring UI.
+- Arbitrary repositories and languages.
+- Editing GitHub PR metadata, reviews, comments, or merge state from Opssemble.
+- GitLab, Bitbucket, and Azure DevOps provider support.
+- Autonomous production chaos.
+- A general-purpose CI/CD replacement.
+- Full observability ingestion or incident management.
+
+</RichText>
+
+<Table
+  id="build-sequence"
+  columns={["Window", "Build", "Exit condition"]}
+  rows={[
+    [
+      "0:00-0:30",
+      "Scaffold Next.js/shadcn/AI Elements, schema, deterministic PR/contract fixtures, and shell",
+      "Changes and Missions routes render on Vercel",
+    ],
+    [
+      "0:30-1:20",
+      "Changes inbox, Watch Plan workspace, compiler schema, and Arm interaction",
+      "The seeded PR can move from Draft to Ready to Armed with one custom requirement",
+    ],
+    [
+      "1:20-2:05",
+      "Mission detail, lifecycle, agent-run components, and timed demo replay",
+      "The armed contract creates a seeded failed mission that tells the full story",
+    ],
+    [
+      "2:05-2:40",
+      "GitHub/Vercel ingestion plus contract-to-mission correlation",
+      "The flawed PR merge and candidate event create exactly one mission",
+    ],
+    [
+      "2:40-3:20",
+      "PostHog, Stripe, Vercel, AWS evidence, and deterministic policy",
+      "Three specialist verdicts reject the candidate from inspectable evidence",
+    ],
+    [
+      "3:20-4:00",
+      "Codex repair, green rerun, integration health, demo polish, and backup recording",
+      "Primary demo succeeds three consecutive times",
+    ],
+  ]}
+/>
+
+<Checklist
+  id="implementation-checklist"
+  items={[
+    {
+      id: "scaffold",
+      label: "Scaffold Next.js App Router, shadcn/ui, AI Elements, Drizzle, and environment validation",
+    },
+    {
+      id: "seed",
+      label: "Create deterministic PR, Watch Plan, contract, mission, and timed event fixtures before live integrations",
+    },
+    {
+      id: "changes",
+      label: "Build Changes inbox with stable PR, risk, Watch Plan, trigger, agent, and update columns",
+    },
+    {
+      id: "watch-plan",
+      label: "Build Watch Plan workspace with agent rationale, structured clauses, custom requirement input, unresolved state, and Arm action",
+    },
+    {
+      id: "detail",
+      label: "Build mission lifecycle, agent run list, evidence panel, and persistent decision bar",
+    },
+    {
+      id: "contracts",
+      label: "Implement versioned Release Contract, shared verdict/evidence schemas, and state transitions",
+    },
+    {
+      id: "policy",
+      label: "Implement deterministic policy with fail, unknown, approval, and idempotency tests",
+    },
+    {
+      id: "webhooks",
+      label: "Verify and normalize GitHub/Vercel events and correlate them to one armed contract",
+    },
+    {
+      id: "agents",
+      label: "Implement Impact routing plus Resilience, Performance, and Product Health specialist runs",
+    },
+    {
+      id: "actions",
+      label: "Wire Vercel decision, PostHog restore, Linear issue, and Codex repair adapters",
+    },
+    {
+      id: "demo",
+      label: "Rehearse failed candidate -> evidence -> reject -> repair -> green rerun",
+    },
+  ]}
+/>
+
+<RichText id="demo-script">
+
+## Five-Minute Demo
+
+1. **0:00-0:35:** Open Changes. PR #184 is high risk and already has a Draft Watch Plan generated from its diff and Greptile context.
+2. **0:35-1:15:** Open the plan. Show the proposed Resilience, Performance, and Product Health agents and the reason each was selected.
+3. **1:15-1:50:** Type `Also monitor EU checkout completion and duplicate Stripe attempts`; show it compile into PostHog and Stripe clauses, then click `Arm`.
+4. **1:50-2:15:** Trigger or replay merge plus Vercel candidate readiness. The armed contract becomes a live Release Mission.
+5. **2:15-3:10:** Show Resilience injecting a lost response, Performance comparing production and candidate, and Product Health measuring synthetic checkout completion.
+6. **3:10-3:45:** Open correlated evidence and show deterministic policy rejecting the candidate.
+7. **3:45-4:30:** Approve `Repair with Codex`; show the bounded task, changed files, tests, and fix PR.
+8. **4:30-5:00:** Replay the repaired candidate, turn critical verdicts green, and promote. End on the contract history showing both mission executions.
+
+If the primary path is stable, append the PostHog `10% -> 50% -> 10%` feature dial-up as a second mission type.
+
+</RichText>
+
+<RichText id="risk-section">
+
+## Risks and Fallbacks
+
+</RichText>
+
+<Table
+  id="risk-table"
+  columns={["Risk", "Mitigation", "Fallback demo"]}
+  rows={[
+    [
+      "Provider setup consumes the build window",
+      "Build the UI and contracts against deterministic fixtures first",
+      "Timed replay uses the exact same persisted event shape as live runs",
+    ],
+    [
+      "Long-running work exceeds a request or deployment boundary",
+      "Use Vercel Workflow and persist every transition",
+      "Manual workflow trigger resumes from stored checkpoints",
+    ],
+    [
+      "Greptile/TREX API access is unavailable",
+      "Make Greptile context an optional Impact tool",
+      "Use repository docs, diff, and seeded historical revert evidence",
+    ],
+    [
+      "Live chaos is unsafe or flaky",
+      "Use signed preview-only fault controls and protected candidate URLs",
+      "Replay recorded experiment evidence; never fault production",
+    ],
+    [
+      "Metrics do not reach sample thresholds in time",
+      "Use stable synthetic users and compact demo windows clearly labeled synthetic",
+      "Mark the live result unknown and switch to the recorded mission",
+    ],
+    [
+      "Codex repair takes too long",
+      "Pre-validate the bounded prompt and expected repair branch",
+      "Open the prepared Codex thread/PR and continue with the same rerun",
+    ],
+  ]}
+/>
+
+<RichText id="validation-plan">
+
+## Validation
+
+### Product Checks
+
+- The Changes inbox makes uncovered and unresolved PRs visible without opening every row.
+- A developer can understand why an agent was selected and remove only optional coverage.
+- A custom monitoring request never becomes executable until every phrase is shown as a supported structured clause.
+- Arming creates an immutable contract version; subsequent edits create a new version.
+- The queue exposes every mission requiring a human decision without opening each row.
+- A first-time viewer can identify the failed customer outcome and technical cause in under 30 seconds.
+- Every agent verdict links to at least one inspectable evidence record.
+- The mission can be reconstructed after refresh from persisted events.
+- The decision bar never offers an action disallowed by policy.
+- Agent/tool detail is accessible without turning the default page into a transcript.
+
+### Deterministic Tests
+
+- Watch Plan compilation for policy-required agents, code-inferred agents, and developer-requested signals.
+- Unsupported or ambiguous monitoring phrases remain unresolved and block `Arm`.
+- Contract-version immutability and exact snapshot retention by running missions.
+- Webhook signature verification and duplicate-event handling.
+- Mission correlation across GitHub PR, contract version, commit SHA, Vercel deployment ID, and PostHog flag change.
+- Policy truth table for pass, fail, warn, unknown, missing rollback, and missing approval.
+- Action-ledger idempotency for promote, restore, Linear, and Codex dispatch.
+- Agent output schema rejection for malformed or unsupported values.
+- PostHog restoration uses the exact captured prior configuration.
+
+### End-to-End Smoke
+
+Run one test against the demo repository:
+
+`flawed PR -> proposed Watch Plan -> custom monitor clause -> armed contract -> Vercel candidate -> mission -> three agent verdicts -> reject -> Codex repair -> new candidate -> green rerun -> promote`
+
+Verify the same change ID and contract version appear across the mission record, GitHub check/comment, Vercel deployment, evidence, decision, Linear issue, and repair PR.
+
+</RichText>
+
+<RichText id="reference-basis">
+
+## Current Implementation Basis
+
+- Vercel AI SDK agents: `ToolLoopAgent`, typed tool parts, structured output, and AI Gateway.
+- AI Elements: composable agent, task, tool, artifact, test, conversation, and approval components that can be adapted to persisted mission events.
+- Vercel Workflow: durable stateful functions for pause/resume/retry semantics.
+- OpenAI Codex SDK: server-side programmatic repair threads suitable for CI/CD-style automation.
+- shadcn/ui: owned source components for a dense Next.js operational interface.
+
+The exact package versions and AI Gateway model ID should be resolved from the package manager and live model catalog at implementation time.
+
+</RichText>
+
+<RichText id="open-questions-heading">
+
+### Open Questions
+
+</RichText>
+
+<QuestionForm
+  id="open-questions"
+  questions={[
+    {
+      id: "mvp-breadth",
+      title: "How broad should the judged MVP appear?",
+      subtitle: "The implementation should remain honest about which agents are live.",
+      mode: "single",
+      options: [
+        {
+          id: "three-live",
+          label: "Three live agents plus visible registry",
+          detail: "Resilience, Performance, and Product Health are real; the registry communicates the larger platform.",
+          recommended: true,
+        },
+        {
+          id: "many-shallow",
+          label: "Five or more shallow agents",
+          detail: "Broader visual story, but less convincing evidence and a higher integration risk.",
+        },
+      ],
+      required: true,
+    },
+    {
+      id: "working-name",
+      title: "Which working name should the app shell use?",
+      mode: "single",
+      options: [
+        {
+          id: "opssemble",
+          label: "Opssemble",
+          detail: "Communicates assembling an operational agent swarm and already matches the product document.",
+          recommended: true,
+        },
+        {
+          id: "aftermerge",
+          label: "Aftermerge",
+          detail: "Immediately communicates the lifecycle boundary, but is more descriptive and less ownable.",
+        },
+        {
+          id: "release-mission",
+          label: "Release Mission",
+          detail: "Strong product object, but weaker as a company/platform name.",
+        },
+      ],
+      required: true,
+    },
+    {
+      id: "contract-arming",
+      title: "How should Watch Plans become active?",
+      subtitle: "The demo can prove either explicit developer intent or policy-driven automation.",
+      mode: "single",
+      options: [
+        {
+          id: "explicit-arm",
+          label: "Developer clicks Arm",
+          detail: "Every PR receives a draft plan automatically; a developer confirms the resolved contract before it can trigger missions.",
+          recommended: true,
+        },
+        {
+          id: "policy-auto-arm",
+          label: "Policy auto-arms",
+          detail: "Eligible plans activate without interaction, while high-risk or unresolved plans still require approval.",
+        },
+      ],
+      required: true,
+    },
+  ]}
+  submitLabel="Review decisions"
+/>
