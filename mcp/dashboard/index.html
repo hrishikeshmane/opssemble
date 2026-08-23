@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Offline MCP bad-booking evidence rehearsal">
+    <title>MCP Evidence Flight Recorder</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <header class="masthead">
+      <div>
+        <p class="eyebrow">OPSSEMBLE / INCIDENT SESSION</p>
+        <h1>MCP Evidence Flight Recorder</h1>
+        <p class="lede">Watch a faulty booking release move from merge detection to correlated evidence and an agent-ready repair handoff.</p>
+      </div>
+      <div class="run-status" aria-live="polite">
+        <span class="status-lamp" id="statusLamp"></span>
+        <div>
+          <span class="micro-label">RUN STATUS</span>
+          <strong id="runStatus">Starting</strong>
+        </div>
+      </div>
+    </header>
+
+    <section class="boundary" aria-label="Data boundary">
+      <div class="boundary-step">
+        <span class="step-number">01</span>
+        <div><strong>Release merged</strong><small>Change and checks accepted</small></div>
+      </div>
+      <span class="boundary-arrow" aria-hidden="true">→</span>
+      <div class="boundary-step">
+        <span class="step-number">02</span>
+        <div><strong>Telemetry streaming</strong><small>Operation op-204 correlated</small></div>
+      </div>
+      <span class="boundary-arrow" aria-hidden="true">→</span>
+      <div class="boundary-step">
+        <span class="step-number">03</span>
+        <div><strong>Evidence delivered</strong><small>Agent tools receive the stream</small></div>
+      </div>
+    </section>
+
+    <section class="activity-focus" id="focusPanel" aria-live="polite" aria-atomic="true">
+      <div class="focus-step">
+        <span class="micro-label">Current activity</span>
+        <strong><span id="focusStep">01</span><small>/10</small></strong>
+      </div>
+      <div class="focus-copy">
+        <span class="focus-tool" id="focusTool">session.initialize</span>
+        <h2 id="focusHeadline">Starting incident session</h2>
+        <p id="focusDetail">Preparing the release and evidence channels.</p>
+      </div>
+      <div class="focus-mode">
+        <span class="live-pip" aria-hidden="true"></span>
+        <div><span class="micro-label">Data mode</span><strong id="dataModeLabel">REAL-TIME REPLAY</strong></div>
+      </div>
+      <div class="focus-progress" aria-hidden="true"><span id="focusProgress"></span></div>
+    </section>
+
+    <div class="workspace">
+      <aside class="recorder" aria-label="Rehearsal stages">
+        <div class="section-heading">
+          <span>FLIGHT RECORDER</span>
+          <span class="recording-mark">REC</span>
+        </div>
+        <ol class="stage-rail" id="stageRail"></ol>
+      </aside>
+
+      <main class="main-grid">
+        <section class="panel pr-panel" aria-labelledby="prHeading">
+          <div class="panel-heading">
+            <div>
+              <span class="kicker">PLANNER INPUT</span>
+              <h2 id="prHeading">Bad PR under test</h2>
+            </div>
+            <span class="mode-badge context">PR CONTEXT</span>
+          </div>
+          <h3 id="prTitle" class="pr-title">Waiting for planner context…</h3>
+          <p class="mono muted" id="prMeta">—</p>
+          <div class="file-list" id="changedFiles"></div>
+          <div class="diff-window">
+            <div class="window-bar"><span></span><span></span><span></span><b>unified diff</b></div>
+            <pre id="prDiff">Planner has not returned the diff yet.</pre>
+          </div>
+        </section>
+
+        <section class="panel metric-panel" aria-labelledby="metricHeading">
+          <div class="panel-heading">
+            <div>
+              <span class="kicker">LIVE AGENT RESPONSE</span>
+              <h2 id="metricHeading">Booking latency</h2>
+            </div>
+            <span class="mode-badge live">LIVE STREAM</span>
+          </div>
+          <div class="metric-readout">
+            <div><strong id="p99Value">—</strong><span>ms p99</span></div>
+            <p>Latency samples arrive through the MCP evidence stream for the active release.</p>
+          </div>
+          <svg id="metricChart" class="metric-chart" viewBox="0 0 640 150" role="img" aria-label="Booking latency samples over the replay window"></svg>
+          <div class="chart-axis"><span>0s</span><span>45s replay window</span></div>
+        </section>
+
+        <section class="panel sequence-panel" aria-labelledby="sequenceHeading">
+          <div class="panel-heading">
+            <div>
+              <span class="kicker">CORRELATED OPERATION / op-204</span>
+              <h2 id="sequenceHeading">Payment side-effect sequence</h2>
+            </div>
+            <span class="fault-chip">FAULT</span>
+          </div>
+          <div class="count-strip">
+            <div><span>Reservations</span><strong id="reservationCount">0</strong></div>
+            <div><span>Payment intents</span><strong id="paymentCount">0</strong></div>
+            <div><span>Completion</span><strong id="completionCount">—</strong></div>
+          </div>
+          <ol class="incident-list" id="paymentSequence">
+            <li class="empty-state">Waiting for <code>agent.get_events</code>…</li>
+          </ol>
+        </section>
+
+        <section class="panel evidence-panel" aria-labelledby="evidenceHeading">
+          <div class="panel-heading">
+            <div>
+              <span class="kicker">DOWNSTREAM AGENT INBOX</span>
+              <h2 id="evidenceHeading">Evidence received</h2>
+            </div>
+            <span class="mode-badge live">MCP STREAM</span>
+          </div>
+          <div class="evidence-grid" id="evidenceGrid"></div>
+          <div class="source-note">
+            <span>STREAM CORRELATION</span>
+            <code id="artifactSource">operation op-204 · awaiting evidence</code>
+          </div>
+        </section>
+
+        <section class="panel repair-panel" aria-labelledby="repairHeading">
+          <div class="panel-heading">
+            <div>
+              <span class="kicker">ACTION HANDOFF</span>
+              <h2 id="repairHeading">Repair task</h2>
+            </div>
+            <span class="mode-badge waiting" id="repairState">WAITING</span>
+          </div>
+          <dl class="repair-details">
+            <div><dt>Task</dt><dd id="repairTask">—</dd></div>
+            <div><dt>Branch</dt><dd id="repairBranch">—</dd></div>
+            <div><dt>PR marker</dt><dd id="repairMarker">—</dd></div>
+          </dl>
+        </section>
+
+        <section class="panel raw-panel" aria-labelledby="rawHeading">
+          <div class="panel-heading">
+            <div>
+              <span class="kicker">TOOL RECEIPTS</span>
+              <h2 id="rawHeading">Raw MCP responses</h2>
+            </div>
+            <span class="call-count" id="callCount">0 calls</span>
+          </div>
+          <div class="raw-layout">
+            <div class="call-list" id="callList" role="tablist" aria-label="MCP calls"></div>
+            <pre class="json-viewer" id="rawJson">No MCP tool has returned yet.</pre>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <footer>
+      <p>Session offline-bad-booking-pr · real-time replay · stop the local recorder with <kbd>Ctrl</kbd> + <kbd>C</kbd></p>
+    </footer>
+    <script src="/app.js" defer></script>
+  </body>
+</html>

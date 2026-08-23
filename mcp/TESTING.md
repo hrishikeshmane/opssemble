@@ -7,6 +7,42 @@ This guide covers two development flows:
 
 Both flows use checked-in FlightLab PR snapshots and generated monitoring evidence. The full live merge/deployment workflow is not required.
 
+## Visual bad-payment rehearsal (one command)
+
+Use this when you want to watch the complete offline story and inspect exactly what the MCP tools return:
+
+```bash
+cd /Users/kartikpatil/hackathon/opssemble
+UV_CACHE_DIR=/tmp/opssemble-uv-cache uv run python mcp/offline_flow.py
+```
+
+The script opens `http://127.0.0.1:8766` and stays running until you press `Ctrl+C`. It requires no environment variables, token, GitHub connection, FlightLab server, or separate MCP server. The default presentation lasts about 18 seconds: each activity remains visible for 1.75 seconds, the relevant panel is focused, and the on-screen data mode reads `REAL-TIME REPLAY`.
+
+The dashboard shows this sequence:
+
+1. The control profile selects the checked-in bad booking PR snapshot as an offline merge rehearsal.
+2. The planner profile returns the redacted real diff from that snapshot.
+3. Monitoring freshly generates a temporary seed-204 copy, byte-verifies the checked-in JSON/NDJSON observations in `monitoring/generated/v1/booking-timeout-retry-candidate/`, and starts the replay.
+4. The agent profile returns the metrics, logs, traces, and events through actual FastMCP client calls.
+5. The correlated evidence shows `res-204-a` committed, a response timeout after commit, a retry with `attempt-204-b`, `res-204-b` committed, and payment intents `pi-204-a` and `pi-204-b`.
+6. The actions profile creates a repair handoff in `awaiting_agent`.
+
+Yes, the incident telemetry in this flow is mocked. More precisely, it is deterministic, monitoring-generated data marked `dataMode: "simulated"`; the PR diff is marked `dataMode: "snapshot"`. The dashboard does not claim that a live payment provider emitted the evidence. The raw MCP response panel lets you verify that the downstream agent receives those generated records through `get_metrics`, `get_logs`, `get_traces`, and `get_events`.
+
+The presentation layer uses operational language such as “Telemetry streaming” and “Evidence delivered” so the rehearsal is easy to follow. It does not rewrite the underlying MCP payloads; expanding a raw tool receipt still shows the actual `dataMode` field.
+
+To run without opening a browser:
+
+```bash
+UV_CACHE_DIR=/tmp/opssemble-uv-cache uv run python mcp/offline_flow.py --no-open
+```
+
+For a non-interactive/CI run that prints the complete MCP transcript as JSON and exits:
+
+```bash
+UV_CACHE_DIR=/tmp/opssemble-uv-cache uv run python mcp/offline_flow.py --once --step-delay 0
+```
+
 ## Prerequisites
 
 - Python 3.12+
@@ -59,6 +95,13 @@ Run all monitoring tests and verify the checked-in generated evidence:
 ```bash
 UV_CACHE_DIR=/tmp/opssemble-uv-cache uv run --group dev pytest -q
 UV_CACHE_DIR=/tmp/opssemble-uv-cache uv run python -m monitoring generate --check
+```
+
+Run the visual rehearsal contract tests:
+
+```bash
+UV_CACHE_DIR=/tmp/opssemble-uv-cache \
+  uv run --group dev pytest tests/test_offline_mcp_dashboard.py -q
 ```
 
 ## Flow 2: Local HTTP MCP server
