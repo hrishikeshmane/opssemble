@@ -11,6 +11,9 @@
 # testing
 /coverage
 
+# local Opssemble runtime state
+/.data/
+
 # next.js
 /.next/
 /out/
@@ -30,6 +33,7 @@ pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # typescript
 *.tsbuildinfo
