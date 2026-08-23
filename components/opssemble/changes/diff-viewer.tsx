@@ -1,154 +1,157 @@
 "use client"
 
 /**
- * Diff tab. One collapsible per file with a code-review style header row
- * (path, add/remove counts, ratio bar) and a three-column line grid.
+ * The Diff tab. One collapsible per file, opened when it has hunks to show.
+ *
+ * There is no ratio bar. `+46 -18` already says which way the file went, and a
+ * five-segment bar beside it said it again in colour that belongs to a status.
+ *
+ * The open state is held here rather than left to the collapsible so the chevron
+ * can swap glyph -- a rotating chevron animates a shape into a shape that means
+ * something else -- and so a closed file's lines unmount instead of hiding.
  */
-import { ChevronRight } from "lucide-react"
+import * as React from "react"
+import { ChevronDownIcon, ChevronRightIcon, FileDiffIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { ChangeFile, DiffLine } from "@/lib/mock-data"
-import { EmptyState, Mono, Panel } from "@/components/opssemble/kit"
+import { DiffStat } from "@/components/opssemble/presentation"
+import { EmptyLine, EmptyPanel } from "@/components/opssemble/layout"
+import { Button } from "@/components/ui/button"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 
-const BAR_SEGMENTS = 5
-
-const lineSurface: Record<DiffLine["kind"], string> = {
-  add: "bg-ok-muted",
-  del: "bg-fail-muted",
+/** Added and removed lines are tinted; context is left alone so it recedes. */
+const LINE_SURFACE: Record<DiffLine["kind"], string> = {
+  add: "bg-emerald-500/10",
+  del: "bg-red-500/10",
   ctx: "",
-  meta: "bg-muted/40",
+  meta: "",
 }
 
-const lineGutter: Record<DiffLine["kind"], string> = {
+const LINE_PREFIX: Record<DiffLine["kind"], string> = {
   add: "+",
   del: "-",
   ctx: " ",
   meta: " ",
 }
 
-/** Five-segment bar showing the added-to-removed ratio for one file. */
-function RatioBar({ added, removed }: { added: number; removed: number }) {
-  const total = added + removed
-  let filled = 0
-  if (total > 0) {
-    filled = Math.round((added / total) * BAR_SEGMENTS)
-    if (added > 0 && filled === 0) filled = 1
-    if (removed > 0 && filled === BAR_SEGMENTS) filled = BAR_SEGMENTS - 1
-  }
-
-  return (
-    <span aria-hidden className="flex shrink-0 items-center gap-px">
-      {Array.from({ length: BAR_SEGMENTS }, (_, index) => (
-        <span
-          key={index}
-          className={cn(
-            "size-1.5 rounded-[1px]",
-            total === 0
-              ? "bg-muted-foreground/25"
-              : index < filled
-                ? "bg-ok"
-                : "bg-fail"
-          )}
-        />
-      ))}
-    </span>
-  )
-}
-
+/**
+ * The directory recedes and the file name does not: a list of paths under one
+ * tree is scanned by its last segment.
+ */
 function FilePath({ path }: { path: string }) {
   const cut = path.lastIndexOf("/")
-  const directory = cut === -1 ? "" : path.slice(0, cut + 1)
-  const basename = cut === -1 ? path : path.slice(cut + 1)
-
   return (
-    <Mono className="min-w-0 truncate text-muted-foreground">
-      {directory}
-      <span className="font-medium text-foreground">{basename}</span>
-    </Mono>
+    <span className="min-w-0 truncate font-mono text-xs text-muted-foreground">
+      {cut === -1 ? null : path.slice(0, cut + 1)}
+      <span className="text-foreground">{path.slice(cut + 1)}</span>
+    </span>
   )
 }
 
 function DiffRow({ line }: { line: DiffLine }) {
   return (
-    <div
-      className={cn(
-        "grid grid-cols-[44px_44px_1fr] items-stretch",
-        lineSurface[line.kind]
-      )}
-    >
-      <span className="ops-mono border-r border-border/60 px-2 text-right text-[10px] leading-5 text-muted-foreground/60 select-none">
+    <div className={cn("grid grid-cols-[44px_44px_1fr]", LINE_SURFACE[line.kind])}>
+      <span className="pr-2 text-right font-mono text-[11px] leading-5 text-muted-foreground/70 select-none">
         {line.oldNo ?? ""}
       </span>
-      <span className="ops-mono border-r border-border/60 px-2 text-right text-[10px] leading-5 text-muted-foreground/60 select-none">
+      <span className="pr-2 text-right font-mono text-[11px] leading-5 text-muted-foreground/70 select-none">
         {line.newNo ?? ""}
       </span>
-      <code className="ops-mono scrollbar-thin block overflow-x-auto px-2 text-[11px] leading-5 whitespace-pre">
-        <span aria-hidden className="inline-block w-[1ch] text-muted-foreground">
-          {lineGutter[line.kind]}
-        </span>
+      <code className="font-mono text-[11px] leading-5 whitespace-pre">
+        {LINE_PREFIX[line.kind]}
         {line.text}
       </code>
     </div>
   )
 }
 
-export function DiffViewer({ files }: { files: ChangeFile[] }) {
+function DiffFile({ file }: { file: ChangeFile }) {
+  // A file with hunks is what the reader came for; one without is a stub, and
+  // opening every stub would bury the three files that carry the change.
+  const [open, setOpen] = React.useState(file.hunks.length > 0)
+  const Chevron = open ? ChevronDownIcon : ChevronRightIcon
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div className="flex items-center gap-2 border-b border-border/60 px-4 py-2 text-xs">
+        <CollapsibleTrigger
+          render={
+            <Button
+              size="icon-xs"
+              variant="ghost"
+              // The chevron sits inside a row that already highlights on hover;
+              // a second surface under a 20px target reads as a stray box.
+              className="rounded hover:bg-transparent"
+              aria-label={`${open ? "Collapse" : "Expand"} ${file.path}`}
+            />
+          }
+        >
+          <Chevron className="size-3.5" />
+        </CollapsibleTrigger>
+        <FilePath path={file.path} />
+        <DiffStat
+          additions={file.added}
+          deletions={file.removed}
+          className="ml-auto font-mono text-[11px]"
+        />
+      </div>
+
+      {open ? (
+        <CollapsibleContent>
+          {file.hunks.length === 0 ? (
+            <EmptyLine>Diff collapsed for brevity in this mock.</EmptyLine>
+          ) : (
+            // Long lines scroll here rather than stretching the page, and the
+            // gutter is reserved so a file that crosses the overflow boundary
+            // does not shift its line numbers as the scrollbar arrives.
+            //
+            // The containment sits on the body of a file rather than on each
+            // line: this box is its own horizontal scroller, so skipping it
+            // cannot affect anything else's scroll width, whereas skipping
+            // individual lines would drop the widest offscreen one out of the
+            // measured width and make the scroller jitter. `auto` keeps the
+            // height the browser last measured, so only the first pass uses the
+            // estimate, and the file header above stays laid out either way.
+            <div className="overflow-x-auto [contain-intrinsic-block-size:auto_180px] [content-visibility:auto] [scrollbar-gutter:stable]">
+              {file.hunks.map((hunk) => (
+                <div key={hunk.header}>
+                  <div className="bg-muted/40 px-4 py-1 font-mono text-[11px] text-muted-foreground">
+                    {hunk.header}
+                  </div>
+                  {hunk.lines.map((line, index) => (
+                    <DiffRow
+                      key={`${line.oldNo ?? "_"}:${line.newNo ?? "_"}:${index}`}
+                      line={line}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          )}
+        </CollapsibleContent>
+      ) : null}
+    </Collapsible>
+  )
+}
+
+export function DiffViewer({ files }: { files: readonly ChangeFile[] }) {
   if (files.length === 0) {
     return (
-      <Panel>
-        <EmptyState
-          title="No file diff available"
-          detail="Diff collapsed for brevity in this mock."
-        />
-      </Panel>
+      <EmptyPanel icon={<FileDiffIcon className="size-5" />}>
+        This change has no file changes.
+      </EmptyPanel>
     )
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div>
       {files.map((file) => (
-        <Panel key={file.path} className="overflow-hidden">
-          <Collapsible defaultOpen={file.hunks.length > 0}>
-            <CollapsibleTrigger className="group/file ops-row flex w-full items-center gap-2 px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/40">
-              <ChevronRight
-                aria-hidden
-                className="size-3 shrink-0 text-muted-foreground transition-transform duration-100 group-data-[panel-open]/file:rotate-90"
-              />
-              <FilePath path={file.path} />
-              <span className="flex-1" />
-              <Mono className="text-[10px] text-ok">+{file.added}</Mono>
-              <Mono className="text-[10px] text-fail">-{file.removed}</Mono>
-              <RatioBar added={file.added} removed={file.removed} />
-            </CollapsibleTrigger>
-
-            <CollapsibleContent className="border-t border-border">
-              {file.hunks.length === 0 ? (
-                <p className="px-3 py-2 text-[11px] text-muted-foreground">
-                  Diff collapsed for brevity in this mock.
-                </p>
-              ) : (
-                file.hunks.map((hunk) => (
-                  <div key={hunk.header}>
-                    <div className="ops-mono border-b border-border bg-muted/40 px-3 py-1 text-[10px] text-muted-foreground">
-                      {hunk.header}
-                    </div>
-                    {hunk.lines.map((line, index) => (
-                      <DiffRow
-                        key={`${line.kind}-${line.oldNo}-${line.newNo}-${index}`}
-                        line={line}
-                      />
-                    ))}
-                  </div>
-                ))
-              )}
-            </CollapsibleContent>
-          </Collapsible>
-        </Panel>
+        <DiffFile key={file.path} file={file} />
       ))}
     </div>
   )

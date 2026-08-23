@@ -1,11 +1,19 @@
 "use client"
 
+/**
+ * Handing a held candidate to Codex.
+ *
+ * The dialog exists to state the boundary before a person crosses it: what Codex
+ * can touch, what it cannot, and what the repair has to satisfy to come back. The
+ * confirm button is labelled with the action rather than "Confirm", so a reader
+ * who only reads the button still knows what they approved.
+ */
 import * as React from "react"
-import { Check } from "lucide-react"
+import { CheckIcon } from "lucide-react"
 
+import { cn } from "@/lib/utils"
 import { decision } from "@/lib/mock-data"
-import { Label, Mono, Panel } from "@/components/opssemble/kit"
-import { Alert, AlertTitle } from "@/components/ui/alert"
+import { tone } from "@/components/opssemble/presentation"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -18,66 +26,70 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 
-/**
- * Human authorization gate for a bounded Codex repair. Approval is mock state
- * held here and surfaced as an inline confirmation next to the trigger.
- */
 export function RepairDialog() {
   const [open, setOpen] = React.useState(false)
-  const [queued, setQueued] = React.useState(false)
+  const [approved, setApproved] = React.useState(false)
+
+  // Once the repair is approved the action is spent, and a button that would
+  // start a second one is a control whose only option is the current state. The
+  // confirmation takes its place rather than sitting beside it.
+  if (approved) {
+    return (
+      <span className={cn("flex items-center gap-1.5 text-xs", tone.good)}>
+        <CheckIcon aria-hidden className="size-3 shrink-0" />
+        Repair opened in {decision.repair.scope}
+      </span>
+    )
+  }
 
   return (
-    <div className="flex items-center gap-2">
-      {queued ? (
-        <Alert className="w-auto border-ok/40 py-1">
-          <Check className="text-ok" />
-          <AlertTitle className="font-normal">
-            Repair queued in <Mono>{decision.repair.scope}</Mono>
-          </AlertTitle>
-        </Alert>
-      ) : null}
+    <Dialog onOpenChange={setOpen} open={open}>
+      <DialogTrigger render={<Button size="xs">Repair with Codex</Button>} />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Repair with Codex</DialogTitle>
+          <DialogDescription>
+            Codex works in {decision.repair.scope} and opens a repair pull
+            request. {decision.repair.guardrail}
+          </DialogDescription>
+        </DialogHeader>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogTrigger render={<Button>Repair with Codex</Button>} />
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Approve Codex repair</DialogTitle>
-            <DialogDescription>
-              Codex is scoped to <Mono>{decision.repair.scope}</Mono>.{" "}
-              {decision.repair.guardrail}
-            </DialogDescription>
-          </DialogHeader>
+        <div>
+          <p className="text-xs text-muted-foreground">
+            The repair is accepted when it:
+          </p>
+          {/* A plain list. Each criterion is already a complete sentence, so a
+              card or a row per item would frame text that needs no frame. */}
+          <ul className="mt-1.5 space-y-1">
+            {decision.repair.acceptance.map((criterion) => (
+              <li className="flex items-start gap-1.5 text-xs" key={criterion}>
+                <CheckIcon
+                  aria-hidden
+                  className={cn("mt-0.5 size-3 shrink-0", tone.good)}
+                />
+                <span className="min-w-0">{criterion}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
 
-          <Panel className="flex flex-col gap-2 p-3">
-            <Label>Acceptance criteria</Label>
-            <ul className="flex flex-col gap-1.5">
-              {decision.repair.acceptance.map((item) => (
-                <li key={item} className="flex items-start gap-2 text-[12px]">
-                  <Check
-                    aria-hidden
-                    className="mt-0.5 size-3 shrink-0 text-ok"
-                  />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </Panel>
-
-          <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>
-              Cancel
-            </DialogClose>
-            <Button
-              onClick={() => {
-                setQueued(true)
-                setOpen(false)
-              }}
-            >
-              Approve repair
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+        <DialogFooter>
+          <DialogClose render={<Button size="sm" variant="outline" />}>
+            Cancel
+          </DialogClose>
+          {/* `size="sm"` rather than the `xs` the page uses: inside a dialog the
+              hit target is the whole decision, not a row accessory. */}
+          <Button
+            onClick={() => {
+              setApproved(true)
+              setOpen(false)
+            }}
+            size="sm"
+          >
+            Approve repair
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

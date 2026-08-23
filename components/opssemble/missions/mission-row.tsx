@@ -1,81 +1,107 @@
+/**
+ * One mission in the queue.
+ *
+ * The same three zones the changes list uses -- state glyph, title over a
+ * dot-separated meta line, right-aligned time -- because the two lists answer
+ * the same shape of question and a reader should not have to relearn the row.
+ *
+ * There is no progress bar and no chevron. A bar would be a second reading of
+ * the agent count already in the meta line, and every row here is a link, so a
+ * chevron on each of them says nothing the hover does not.
+ */
 import Link from "next/link"
-import { ChevronRight } from "lucide-react"
 
-import type { Mission } from "@/lib/mock-data"
-import { Mono, VerdictPill } from "@/components/opssemble/kit"
-import { Progress } from "@/components/ui/progress"
+import type { Mission, Verdict } from "@/lib/mock-data"
+import {
+  MetaLine,
+  Sha,
+  VerdictIcon,
+  verdictLabel,
+} from "@/components/opssemble/presentation"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 /**
- * Single grid template shared by the queue header (`GridHead`) and every row so
- * the columns can never drift apart.
+ * A mission's state answers the same four-way question an agent run answers, so
+ * it borrows the verdict vocabulary rather than growing a second palette beside
+ * it: a held mission wears the amber a held agent already wears one screen down.
+ *
+ * Exported because the detail page needs the same mapping, and a state that
+ * resolved differently in two places would be two states.
  */
-export const missionGridTemplate =
-  "minmax(0,2.1fr) 0.85fr 0.85fr 0.85fr 0.6fr"
+const MISSION_VERDICT = {
+  running: "running",
+  hold: "hold",
+  pass: "pass",
+  fail: "fail",
+} as const satisfies Record<Mission["state"], Verdict>
+
+export function missionVerdict(state: Mission["state"]): Verdict {
+  return MISSION_VERDICT[state]
+}
 
 export function MissionRow({ mission }: { mission: Mission }) {
-  // A flag dial-up mission has no commit of its own; its candidate is the
-  // exposure step itself, so it reads as the subject rather than a change.
-  const isFlagExposure = mission.candidate.startsWith("flag")
-  const progress = Math.round(
-    (mission.agentsComplete / mission.agentsTotal) * 100
-  )
+  const verdict = missionVerdict(mission.state)
+  const label = verdictLabel(verdict)
 
   return (
-    <Link
-      href={`/missions/${mission.id}`}
-      style={{ gridTemplateColumns: missionGridTemplate }}
-      className="ops-row group grid items-center gap-3 px-3 py-2.5"
-    >
-      <div className="min-w-0">
-        <div className="flex min-w-0 items-baseline gap-1.5">
-          {isFlagExposure ? null : (
-            <Mono className="shrink-0 text-muted-foreground">
-              #{mission.changeNumber}
-            </Mono>
-          )}
-          <span className="truncate text-[12px] font-medium">
+    <li>
+      <Link
+        href={`/missions/${mission.id}`}
+        className={
+          // Offscreen rows are skipped for style, layout and paint, and the
+          // intrinsic size keeps the scrollbar honest while one is skipped.
+          "grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-md px-3 py-2 text-left transition-colors outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring [contain-intrinsic-block-size:54px] [content-visibility:auto]"
+        }
+      >
+        {/* The only state indicator on the row. The trigger carries the label
+            rather than the icon because the icon is decorative by contract, and
+            it stays a span so it cannot nest a control inside this link. */}
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <span
+                aria-label={label}
+                className="inline-flex shrink-0"
+                role="img"
+              />
+            }
+          >
+            {/* size-4 matches the plan glyph in the changes list, so the first
+                column of both lists sits on the same optical edge. */}
+            <VerdictIcon className="size-4" verdict={verdict} />
+          </TooltipTrigger>
+          <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
+
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-medium text-foreground">
             {mission.title}
           </span>
-        </div>
-        <div className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] text-muted-foreground">
-          <span>contract</span>
-          <Mono>v{mission.contractVersion}</Mono>
-          <span aria-hidden>·</span>
-          {isFlagExposure ? (
-            <Mono className="truncate">{mission.candidate}</Mono>
-          ) : (
-            <>
-              <span>candidate</span>
-              <Mono>{mission.sha}</Mono>
-            </>
-          )}
-        </div>
-      </div>
+          <MetaLine className="mt-0.5 text-xs text-muted-foreground/70">
+            {/* "contract v3" is prose, not a copyable identifier, so it stays
+                out of the monospace that the sha beside it earns. */}
+            <span className="shrink-0 tabular-nums">
+              #{mission.changeNumber}
+            </span>
+            <span className="shrink-0">
+              contract v{mission.contractVersion}
+            </span>
+            <span className="max-w-32 shrink-0 truncate">{mission.stage}</span>
+            <Sha className="shrink-0" sha={mission.sha} />
+            <span className="shrink-0 tabular-nums">
+              {mission.agentsComplete} / {mission.agentsTotal}
+            </span>
+          </MetaLine>
+        </span>
 
-      <span className="truncate text-[12px]">{mission.stage}</span>
-
-      <div className="flex min-w-0 flex-col gap-1.5 pr-3">
-        <Mono>
-          {mission.agentsComplete} / {mission.agentsTotal}
-        </Mono>
-        <Progress
-          value={progress}
-          aria-label={`${mission.agentsComplete} of ${mission.agentsTotal} agents complete`}
-          className="w-full"
-        />
-      </div>
-
-      <div className="flex items-center">
-        <VerdictPill verdict={mission.state} />
-      </div>
-
-      <div className="flex items-center justify-between gap-1">
-        <Mono className="text-muted-foreground">{mission.updated}</Mono>
-        <ChevronRight
-          aria-hidden
-          className="size-3.5 shrink-0 text-muted-foreground opacity-0 transition-opacity duration-100 group-hover:opacity-100"
-        />
-      </div>
-    </Link>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground/70">
+          {mission.updated}
+        </span>
+      </Link>
+    </li>
   )
 }

@@ -1,61 +1,54 @@
 "use client"
 
-import * as React from "react"
+/**
+ * The app frame: a sidebar the same colour as the canvas, separated by a
+ * hairline rather than a fill, and a content column that owns its own scrolling.
+ *
+ * Nothing here is tinted. The only colour in the chrome is the active row's
+ * neutral `bg-accent`, so a status tone anywhere in the content is the brightest
+ * thing on screen.
+ */
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import {
   ChevronsUpDown,
   GitPullRequest,
-  Moon,
+  MoonIcon,
+  PlugIcon,
   Radar,
   Search,
-  ShieldCheck,
-  Sparkles,
-  Sun,
-  Plug,
+  ShieldCheckIcon,
+  SparklesIcon,
+  SunIcon,
 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { changeStats, missionStats, repo } from "@/lib/mock-data"
-import { Kbd, StatusDot } from "@/components/opssemble/kit"
+import { repo } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-const nav = [
-  {
-    href: "/changes",
-    label: "Changes",
-    icon: GitPullRequest,
-    badge: changeStats.open,
-  },
-  {
-    href: "/missions",
-    label: "Missions",
-    icon: Radar,
-    badge: missionStats.running,
-  },
-  { href: "/agents", label: "Agents", icon: Sparkles, badge: null },
-  { href: "/policies", label: "Policies", icon: ShieldCheck, badge: null },
-  { href: "/integrations", label: "Integrations", icon: Plug, badge: null },
+const NAV = [
+  { href: "/changes", label: "Changes", Icon: GitPullRequest },
+  { href: "/missions", label: "Missions", Icon: Radar },
+  { href: "/agents", label: "Agents", Icon: SparklesIcon },
+  { href: "/policies", label: "Policies", Icon: ShieldCheckIcon },
+  { href: "/integrations", label: "Integrations", Icon: PlugIcon },
 ] as const
 
 function NavLink({
   href,
   label,
-  icon: Icon,
-  badge,
+  Icon,
   active,
 }: {
   href: string
   label: string
-  icon: React.ComponentType<{ className?: string }>
-  badge: number | null
+  Icon: typeof GitPullRequest
   active: boolean
 }) {
   return (
@@ -63,26 +56,16 @@ function NavLink({
       href={href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "ops-focus group relative flex h-7 items-center gap-2 rounded-md px-2 text-[12px] transition-colors",
+        "flex h-7 items-center gap-2 rounded-md px-2 text-xs transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        // The current row is a neutral fill. A coloured indicator here would
+        // spend the one signal the content needs for status.
         active
-          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-          : "text-muted-foreground hover:bg-sidebar-accent/50 hover:text-foreground"
+          ? "bg-accent font-medium text-accent-foreground"
+          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
       )}
     >
-      <span
-        className={cn(
-          "absolute left-0 h-3.5 w-0.5 rounded-full bg-brand transition-opacity",
-          active ? "opacity-100" : "opacity-0"
-        )}
-      />
       <Icon className="size-3.5 shrink-0" />
       <span className="truncate">{label}</span>
-      <span className="flex-1" />
-      {badge ? (
-        <span className="ops-mono text-[10px] text-muted-foreground/70">
-          {badge}
-        </span>
-      ) : null}
     </Link>
   )
 }
@@ -96,19 +79,17 @@ function ThemeToggle() {
         render={
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon-xs"
             aria-label="Toggle theme"
             onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
           >
-            {/* Rendered via CSS so the icon never mismatches on hydration. */}
-            <Moon className="hidden dark:block" />
-            <Sun className="block dark:hidden" />
+            {/* Swapped in CSS so the glyph cannot mismatch on hydration. */}
+            <MoonIcon className="hidden size-3.5 dark:block" />
+            <SunIcon className="block size-3.5 dark:hidden" />
           </Button>
         }
       />
-      <TooltipContent className="flex items-center gap-1.5">
-        Toggle theme <Kbd>D</Kbd>
-      </TooltipContent>
+      <TooltipContent>Toggle theme</TooltipContent>
     </Tooltip>
   )
 }
@@ -117,34 +98,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
   return (
-    <div className="flex h-svh overflow-hidden bg-background">
-      <aside className="hidden w-[212px] shrink-0 flex-col border-r border-border bg-sidebar md:flex">
-        <div className="flex h-12 items-center gap-2 px-3">
-          <div className="flex size-5 items-center justify-center rounded bg-brand text-[10px] font-semibold text-brand-foreground">
-            O
-          </div>
-          <span className="text-[13px] font-medium tracking-[-0.01em]">
-            Opssemble
-          </span>
+    <div className="flex h-dvh min-h-0 overflow-hidden overscroll-y-none bg-background text-foreground">
+      <aside className="hidden w-[212px] shrink-0 flex-col border-r border-border/60 bg-sidebar md:flex">
+        <div className="flex h-10 shrink-0 items-center px-4">
+          <span className="text-sm font-semibold">Opssemble</span>
         </div>
 
+        {/* The repository this workspace is pointed at. A picker rather than a
+            label because a reader's first question on an unfamiliar screen is
+            which repository they are looking at. */}
         <button
           type="button"
-          className="ops-focus mx-2 mb-2 flex h-9 items-center gap-2 rounded-md border border-border px-2 text-left transition-colors hover:bg-sidebar-accent/50"
+          className="mx-2 mb-2 flex h-8 items-center gap-2 rounded-md px-2 text-left transition-colors outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
         >
-          <div className="min-w-0 flex-1">
-            <div className="ops-mono truncate text-[11px] leading-tight">
-              {repo.slug}
-            </div>
-            <div className="text-[10px] leading-tight text-muted-foreground">
-              GitHub repository
-            </div>
-          </div>
+          <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">
+            {repo.slug}
+          </span>
           <ChevronsUpDown className="size-3 shrink-0 text-muted-foreground" />
         </button>
 
         <nav className="flex flex-col gap-0.5 px-2">
-          {nav.map((item) => (
+          {NAV.map((item) => (
             <NavLink
               key={item.href}
               {...item}
@@ -155,50 +129,41 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="flex-1" />
 
-        <div className="space-y-2 p-2">
-          <div className="rounded-md border border-border p-2.5">
-            <div className="ops-label">Production</div>
-            <div className="mt-1 flex items-center gap-1.5">
-              <StatusDot status="ok" />
-              <span className="text-[12px] font-medium text-ok">Healthy</span>
-            </div>
-            <div className="ops-mono mt-1 text-[10px] text-muted-foreground">
-              {repo.productionDeployment}
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 px-1">
-            <StatusDot status="ok" />
-            <span className="text-[10px] text-muted-foreground">
-              Synced {repo.syncedSecondsAgo}s ago
+        {/* Production state earns a tone: it is the one thing on the frame a
+            reader needs to see without looking for it. */}
+        <div className="px-4 py-3 text-xs">
+          <span className="flex min-w-0 items-center gap-1.5">
+            <span className="text-muted-foreground">Production</span>
+            <span className="font-medium text-emerald-600 dark:text-emerald-300/90">
+              healthy
             </span>
-          </div>
+          </span>
+          <span className="mt-0.5 block font-mono text-[10px] text-muted-foreground/70">
+            {repo.productionDeployment}
+          </span>
         </div>
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4">
+        <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border/60 px-4">
           <button
             type="button"
-            className="ops-focus flex h-7 w-full max-w-[280px] items-center gap-2 rounded-md border border-border px-2 text-[12px] text-muted-foreground transition-colors hover:bg-muted/50"
+            className="flex h-6 min-w-0 max-w-72 flex-1 items-center gap-1.5 rounded-md px-2 text-xs text-muted-foreground transition-colors outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <Search className="size-3.5" />
-            <span>Search changes and missions</span>
-            <span className="flex-1" />
-            <Kbd>⌘K</Kbd>
+            <Search className="size-3.5 shrink-0" />
+            <span className="truncate">Search changes and missions</span>
           </button>
           <div className="flex-1" />
-          <span className="hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex">
-            Contract engine
-            <StatusDot status="ok" />
-          </span>
-          <Separator orientation="vertical" className="mx-1 h-4" />
           <ThemeToggle />
-          <div className="ml-1 flex size-6 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
-            DW
-          </div>
+          <span
+            aria-hidden
+            className="ml-1 flex size-5 items-center justify-center rounded-full bg-muted text-[9px] font-medium text-muted-foreground"
+          >
+            D
+          </span>
         </div>
 
-        <main className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
+        <main className="scrollbar-thin flex min-h-0 flex-1 flex-col overflow-hidden">
           {children}
         </main>
       </div>

@@ -1,166 +1,150 @@
 "use client"
 
+/**
+ * One agent's work on a mission: a headline that fits a scan, and the tool calls
+ * and measurements behind it a click away.
+ *
+ * A run is a discrete authored object -- an agent's report -- so it takes the
+ * bordered surface a comment takes. The border stays neutral: the glyph and the
+ * verdict word are already the two readings of the outcome this card is allowed,
+ * and a toned border would make three.
+ */
 import * as React from "react"
-import { ChevronDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import type { AgentRun, ToolCall } from "@/lib/mock-data"
+import { Card, MetaRow } from "@/components/opssemble/layout"
 import {
-  Label,
-  Mono,
-  Muted,
-  Panel,
-  Row,
-  Rows,
-  StatusDot,
-  VerdictPill,
-  verdictStatus,
-} from "@/components/opssemble/kit"
+  VerdictIcon,
+  VerdictWord,
+  tone,
+} from "@/components/opssemble/presentation"
+import { statusToneClassName } from "@/components/opssemble/missions/stage-rail"
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 
-const toolStatusText: Record<ToolCall["status"], string> = {
-  completed: "text-ok",
-  running: "text-brand",
-  queued: "text-muted-foreground",
-  failed: "text-fail",
-}
+/**
+ * A tool call's own vocabulary, which is not the mission `Status` union: a call
+ * is completed rather than ok, and failed rather than fail. Same tones, so the
+ * two never disagree about what green means.
+ */
+const TOOL_TONE = {
+  completed: tone.good,
+  running: tone.pending,
+  queued: tone.absent,
+  failed: tone.bad,
+} as const satisfies Record<ToolCall["status"], string>
 
-const toolStatusDot: Record<ToolCall["status"], string> = {
-  completed: "bg-ok",
-  running: "bg-brand",
-  queued: "bg-muted-foreground/40",
-  failed: "bg-fail",
-}
-
-function ToolPayload({ label, value }: { label: string; value: string }) {
+function ToolCallRow({ call }: { call: ToolCall }) {
   return (
-    <div className="flex flex-col gap-1">
-      <Label>{label}</Label>
-      <div className="ops-mono rounded border border-border bg-muted/40 p-2 text-[10px] break-all">
-        {value}
-      </div>
-    </div>
-  )
-}
-
-function ToolCallItem({ call }: { call: ToolCall }) {
-  return (
-    <li className="relative">
-      <span
-        aria-hidden
-        className={cn(
-          "absolute top-1.5 -left-[19px] size-1.5 rounded-full",
-          toolStatusDot[call.status]
-        )}
-      />
-      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <span className={cn("ops-label", toolStatusText[call.status])}>
+    <li>
+      <div className="flex items-baseline gap-2">
+        <span
+          className={cn(
+            "shrink-0 text-[10px] font-medium lowercase",
+            TOOL_TONE[call.status]
+          )}
+        >
           {call.status}
         </span>
-        <Mono className="font-medium">{call.name}</Mono>
-        <Mono className="text-[10px] text-muted-foreground">
-          {call.duration}
-        </Mono>
+        <span className="min-w-0 truncate font-mono text-xs">{call.name}</span>
+        {/* A queued call has not spent any time yet. The mock carries "--" for
+            it, and printing that reads as a duration we failed to measure. */}
+        {call.duration === "--" ? null : (
+          <span className="ml-auto shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+            {call.duration}
+          </span>
+        )}
       </div>
-      <p className="mt-0.5 text-[12px] text-muted-foreground">{call.summary}</p>
-      {call.input || call.output ? (
-        <div className="mt-1.5 flex flex-col gap-1.5">
-          {call.input ? <ToolPayload label="Input" value={call.input} /> : null}
-          {call.output ? (
-            <ToolPayload label="Output" value={call.output} />
-          ) : null}
-        </div>
+      <p className="mt-0.5 text-xs text-muted-foreground">{call.summary}</p>
+      {/* Input before output, unlabelled: the pair reads as a call and what came
+          back from it, and two words of chrome per call would outweigh them. */}
+      {call.input ? (
+        <pre className="mt-1 overflow-x-auto rounded border border-border/60 bg-muted/40 p-2 font-mono text-[10px]">
+          {call.input}
+        </pre>
+      ) : null}
+      {call.output ? (
+        <pre className="mt-1 overflow-x-auto rounded border border-border/60 bg-muted/40 p-2 font-mono text-[10px]">
+          {call.output}
+        </pre>
       ) : null}
     </li>
   )
 }
 
-/**
- * One agent run: collapsed it is a single scan line; expanded it exposes the
- * hypothesis, the tool timeline, and the live observations.
- */
 export function AgentRunCard({ run }: { run: AgentRun }) {
   const [open, setOpen] = React.useState(false)
-  const isRunning = run.verdict === "running"
 
   return (
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <Panel className={cn("overflow-hidden", isRunning && "border-brand/40")}>
-        <CollapsibleTrigger
-          className={cn(
-            "ops-row ops-focus flex w-full items-start gap-2.5 px-3 py-2.5 text-left",
-            open && "border-b border-border"
-          )}
-        >
-          <StatusDot
-            status={verdictStatus[run.verdict]}
-            pulse={isRunning}
-            className="mt-1.5"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="text-[12px] font-medium">{run.name}</div>
-            <p className="text-[11px] text-muted-foreground">{run.headline}</p>
-          </div>
-          <VerdictPill verdict={run.verdict} />
-          <ChevronDown
-            aria-hidden
-            className={cn(
-              "mt-0.5 size-3.5 shrink-0 text-muted-foreground transition-transform duration-100",
-              open && "rotate-180"
-            )}
-          />
-        </CollapsibleTrigger>
+    <li>
+      <Card
+        className={cn(
+          "p-0",
+          // Skipped offscreen only while collapsed. An open card is nothing like
+          // the intrinsic hint tall, and reporting the hint for one would make
+          // the scrollbar lie as soon as it scrolled out of view.
+          !open && "[contain-intrinsic-block-size:44px] [content-visibility:auto]"
+        )}
+      >
+        <Collapsible onOpenChange={setOpen} open={open}>
+          {/* The whole head is the control. No chevron: the verdict word holds
+              the right edge, and a second glyph there would compete with it. */}
+          <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition-colors outline-none hover:bg-accent/60 focus-visible:ring-2 focus-visible:ring-ring">
+            <VerdictIcon verdict={run.verdict} />
+            <span className="shrink-0 text-xs font-medium">{run.name}</span>
+            <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+              {run.headline}
+            </span>
+            <VerdictWord className="text-[11px]" verdict={run.verdict} />
+          </CollapsibleTrigger>
 
-        <CollapsibleContent>
-          <div className="flex flex-col gap-3 px-3 py-3">
-            <Muted>{run.detail}</Muted>
+          {/* Unmounted rather than hidden while collapsed, so a card that nobody
+              opened costs nothing to render. */}
+          {open ? (
+            <CollapsibleContent className="px-3 pb-3">
+              <div className="border-t border-border/60 pt-2">
+                {/* The claim, then what it found. Read in that order the pair is
+                    an argument; reversed it is two unrelated sentences. */}
+                {run.hypothesis ? (
+                  <p className="text-xs text-muted-foreground">
+                    {run.hypothesis}
+                  </p>
+                ) : null}
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {run.detail}
+                </p>
 
-            {run.hypothesis ? (
-              <div className="flex flex-col gap-1 rounded-md border border-border bg-muted/30 px-3 py-2">
-                <Label>Hypothesis</Label>
-                <p className="text-[12px]">{run.hypothesis}</p>
-              </div>
-            ) : null}
-
-            <div className="flex flex-col gap-2">
-              <Label>Tool activity</Label>
-              <ol className="ml-[3px] flex flex-col gap-3 border-l border-border pl-4">
-                {run.toolCalls.map((call) => (
-                  <ToolCallItem key={call.id} call={call} />
-                ))}
-              </ol>
-            </div>
-
-            <div className="flex flex-col gap-2">
-              <Label>Observations</Label>
-              <Panel>
-                <Rows>
-                  {run.observations.map((observation) => (
-                    <Row
-                      key={observation.label}
-                      label={observation.label}
-                      value={observation.value}
-                      status={observation.status}
-                    />
+                <ol className="mt-2 space-y-2">
+                  {run.toolCalls.map((call) => (
+                    <ToolCallRow call={call} key={call.id} />
                   ))}
-                </Rows>
-              </Panel>
-            </div>
-          </div>
-        </CollapsibleContent>
+                </ol>
 
-        {run.latestTool && !open ? (
-          <div className="border-t border-border px-3 py-2">
-            <Mono className="text-[10px] text-muted-foreground">
-              {run.latestTool}
-            </Mono>
-          </div>
-        ) : null}
-      </Panel>
-    </Collapsible>
+                <div className="mt-2 border-t border-border/60 pt-1">
+                  {run.observations.map((observation) => (
+                    <MetaRow key={observation.label} label={observation.label}>
+                      {/* The tone lands on the measurement, not on its name: it
+                          is the number that breached, not the thing measured. */}
+                      <span
+                        className={cn(
+                          "font-mono tabular-nums",
+                          statusToneClassName(observation.status)
+                        )}
+                      >
+                        {observation.value}
+                      </span>
+                    </MetaRow>
+                  ))}
+                </div>
+              </div>
+            </CollapsibleContent>
+          ) : null}
+        </Collapsible>
+      </Card>
+    </li>
   )
 }

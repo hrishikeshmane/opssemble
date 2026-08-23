@@ -1,55 +1,55 @@
+import type { Metadata } from "next"
+
 import { policies } from "@/lib/mock-data"
-import {
-  GridHead,
-  Muted,
-  PageHeader,
-  Panel,
-  PanelHeader,
-} from "@/components/opssemble/kit"
-import { PolicyRow } from "@/components/opssemble/registry/policy-row"
 import { Button } from "@/components/ui/button"
+import {
+  PageBody,
+  PageHeader,
+  Section,
+  SectionHeading,
+} from "@/components/opssemble/layout"
+import { PolicyRow } from "@/components/opssemble/registry/policy-row"
 
-/** One template string shared by the head and every row. */
-const TEMPLATE =
-  "minmax(0,1.3fr) minmax(0,1.5fr) minmax(0,1.6fr) minmax(0,1.1fr) 40px"
-
-const COLUMNS = ["Policy", "Scope", "Requires", "On failure", "Enabled"]
+export const metadata: Metadata = {
+  title: "Policies",
+}
 
 export default function PoliciesPage() {
   return (
-    <div className="flex min-h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <PageHeader
         title="Policies"
         subtitle="Deterministic rules that authorize promotion, hold, restore, and repair"
-        actions={<Button>New policy</Button>}
+        actions={
+          <Button size="xs" variant="outline">
+            New policy
+          </Button>
+        }
       />
 
-      <div className="flex flex-col gap-3 px-5 py-4">
-        <Panel className="overflow-hidden">
-          <GridHead columns={COLUMNS} template={TEMPLATE} />
-          <div className="divide-y divide-border">
-            {policies.map((policy) => (
-              <PolicyRow key={policy.id} policy={policy} template={TEMPLATE} />
-            ))}
-          </div>
-        </Panel>
+      <PageBody>
+        <ul className="px-2 py-2">
+          {policies.map((policy) => (
+            <PolicyRow key={policy.id} policy={policy} />
+          ))}
+        </ul>
 
-        <Panel>
-          <PanelHeader title="Policy precedence" />
-          <div className="space-y-2 p-3">
-            <Muted>
-              Policy is evaluated before any agent proposal. An agent or signal
-              required by a matching policy cannot be removed from a Watch Plan,
-              and a scope match always takes precedence over an exemption.
-            </Muted>
-            <Muted>
-              Arming freezes the resolved contract. Later policy or plan edits
-              produce a new contract version, and a mission already running
-              keeps the version it was armed with.
-            </Muted>
-          </div>
-        </Panel>
-      </div>
+        {/* The heading is a sibling of the prose rather than its parent: it brings
+            its own full-bleed hairline and its own `px-4`, and nesting it inside a
+            Section would double the page's only gutter. */}
+        <SectionHeading title="Policy precedence" />
+        <Section>
+          {/* `max-w-prose` because a 12px line running the full width of a wide
+              window is a line nobody finishes. */}
+          <p className="max-w-prose text-xs text-muted-foreground">
+            Policy is evaluated before any agent proposal, so an agent or signal
+            required by a matching policy cannot be removed from a Watch Plan.
+            Arming freezes the resolved contract: a later policy edit produces a
+            new contract version, and a mission already running keeps the version
+            it was armed with.
+          </p>
+        </Section>
+      </PageBody>
     </div>
   )
 }

@@ -1,8 +1,6 @@
 import { notFound } from "next/navigation"
 
 import { changeTimeline, changes, getChange, watchPlan } from "@/lib/mock-data"
-import { ActionBar } from "@/components/opssemble/kit"
-import { Button } from "@/components/ui/button"
 import { ChangeDetailHeader } from "@/components/opssemble/changes/change-detail-header"
 import { ChangeDetailTabs } from "@/components/opssemble/changes/change-detail-tabs"
 import { ChangeTimeline } from "@/components/opssemble/changes/change-timeline"
@@ -23,31 +21,26 @@ export default async function ChangeDetailPage(
     notFound()
   }
 
-  // The plan under edit carries the next contract version; the change record
-  // still holds the last armed one.
-  const contractVersion =
-    watchPlan.changeId === change.id
-      ? watchPlan.contractVersion
-      : change.contractVersion
+  const signalCount =
+    watchPlan.existingSignals.length + watchPlan.compiledSignals.length
 
   return (
-    <div className="flex min-h-full flex-col">
-      <ChangeDetailHeader change={change} contractVersion={contractVersion} />
-
+    // The page owns the scroll containment: the header and the tab bar hold
+    // their height and the panel below them is the only thing that moves.
+    <div className="flex h-full min-h-0 w-full flex-col bg-background">
+      <ChangeDetailHeader change={change} />
       <ChangeDetailTabs
+        // The accessory says how much coverage this plan buys, which is the one
+        // number a reader on the Watch Plan tab is actually counting.
+        planSummary={`${signalCount} signals · ${watchPlan.compilation.resolved} from your requirement`}
         filesChanged={change.filesChanged}
+        additions={change.additions}
+        deletions={change.deletions}
+        eventCount={changeTimeline.length}
         watchPlan={<WatchPlanPanel change={change} />}
         diff={<DiffViewer files={change.files} />}
         timeline={<ChangeTimeline events={changeTimeline} />}
       />
-
-      <ActionBar
-        note={`Arming freezes contract v${contractVersion}. Later edits create v${contractVersion + 1}.`}
-      >
-        <Button variant="ghost">Reject</Button>
-        <Button variant="outline">Save draft</Button>
-        <Button>Arm Watch Plan</Button>
-      </ActionBar>
     </div>
   )
 }

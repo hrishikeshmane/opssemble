@@ -1,123 +1,127 @@
 /**
- * Change detail header. Modelled on a code-review pull-request header: a
- * breadcrumb, a title row carrying risk and contract state, and a dense
- * hairline-separated meta strip of monospace facts.
+ * The change detail header.
+ *
+ * Two rows in one grid: a breadcrumb line facing the actions across from it,
+ * then the title block spanning both columns beneath. The breadcrumb row is a
+ * fixed 28px so the actions cannot change the height of the page as they come
+ * and go, and the title block below it is free to grow.
+ *
+ * There is no status pill, no contract badge and no risk badge here. The change
+ * number wears the risk tone and that is the whole state signal -- a badge for
+ * it would say the same thing a third time next to the plan glyph the inbox row
+ * already showed.
  */
-import type * as React from "react"
 import Link from "next/link"
-import { ArrowLeft, MoreHorizontal } from "lucide-react"
+import { MoreHorizontalIcon } from "lucide-react"
 
-import type { Change } from "@/lib/mock-data"
-import { Mono, RiskBadge, StatusPill } from "@/components/opssemble/kit"
+import { cn } from "@/lib/utils"
+import { type Change, repo } from "@/lib/mock-data"
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+  ActorLabel,
+  BranchPair,
+  DiffStat,
+  FileCount,
+  MetaLine,
+  riskToneClassName,
+} from "@/components/opssemble/presentation"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-/** Small bordered monospace chip used for git branch names. */
-function BranchChip({ children }: { children: React.ReactNode }) {
+export function ChangeDetailHeader({ change }: { change: Change }) {
   return (
-    <span className="ops-mono rounded-sm border border-border px-1.5 py-px text-[10px] leading-4">
-      {children}
-    </span>
-  )
-}
-
-function MetaSeparator() {
-  return <span aria-hidden className="h-3 w-px shrink-0 bg-border" />
-}
-
-export function ChangeDetailHeader({
-  change,
-  contractVersion,
-}: {
-  change: Change
-  contractVersion: number
-}) {
-  return (
-    <header className="flex flex-col gap-2.5 border-b border-border px-5 py-4">
-      <Breadcrumb>
-        <BreadcrumbList className="text-[11px]">
-          <BreadcrumbItem>
-            <BreadcrumbLink
-              render={
-                <Link href="/changes" className="inline-flex items-center gap-1">
-                  <ArrowLeft className="size-3" />
-                  Changes
-                </Link>
-              }
-            />
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage className="ops-mono">
-              #{change.number}
-            </BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      <div className="flex items-start gap-2">
-        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-          <h1 className="text-[15px] leading-tight font-medium tracking-[-0.01em]">
-            {change.title}
-          </h1>
-          <span className="ops-mono text-[13px] leading-tight text-muted-foreground">
+    <header className="grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2 border-b border-border/60">
+      <div className="ml-4 grid h-7 min-w-0 items-center">
+        <MetaLine className="text-xs text-muted-foreground">
+          {/* The repository is the ancestor a reader came through, so it stays a
+              link back to the inbox. The number is this page, so it does not. */}
+          <Link
+            href="/changes"
+            className="min-w-0 truncate font-medium transition-colors hover:text-foreground"
+          >
+            {repo.slug}
+          </Link>
+          <span
+            className={cn("shrink-0 font-medium", riskToneClassName(change.risk))}
+          >
             #{change.number}
           </span>
-        </div>
-        <div className="flex-1" />
-        <div className="flex shrink-0 items-center gap-1.5">
-          <RiskBadge risk={change.risk} />
-          <StatusPill status="idle" dot={false}>
-            Contract v{contractVersion}
-          </StatusPill>
-          <Button variant="ghost" size="icon-sm" aria-label="More change actions">
-            <MoreHorizontal />
-          </Button>
-        </div>
+        </MetaLine>
       </div>
 
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1.5">
-          <Avatar className="size-4.5">
-            <AvatarFallback className="text-[9px] font-medium">
-              {change.author.initials}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-foreground">{change.author.name}</span>
-        </span>
-        <MetaSeparator />
-        <span className="flex items-center gap-1">
-          <BranchChip>{change.baseBranch}</BranchChip>
-          <span aria-hidden className="ops-mono text-[10px]">
-            &larr;
+      <div className="mr-4 flex h-7 min-w-0 flex-nowrap items-center justify-end gap-1">
+        {/* Arming is the consequential act on this page and the only thing here
+            wearing the primary tone. Saving a draft changes nothing anybody can
+            see, so it is an outline; rejecting is rare enough for the overflow. */}
+        <Button size="xs">Arm Watch Plan</Button>
+        <Button size="xs" variant="outline">
+          Save draft
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                size="icon-xs"
+                variant="ghost"
+                aria-label="More change actions"
+              />
+            }
+          >
+            <MoreHorizontalIcon className="size-4" />
+          </DropdownMenuTrigger>
+          {/* The popup anchors to a 20px trigger, so it has to be told its own
+              width or it inherits that. */}
+          <DropdownMenuContent align="end" className="w-auto min-w-44">
+            <DropdownMenuItem>Reject</DropdownMenuItem>
+            <DropdownMenuItem>Create Linear issue</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>Open on GitHub</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="col-span-2 mt-1 min-w-0 px-4 pb-4">
+        <h1 className="min-w-0 text-base leading-snug font-semibold">
+          {change.title}
+        </h1>
+
+        {/* Who and when, and nothing else. Reviewers, labels and a created date
+            all read as equally important beside them, and none of them is. */}
+        <MetaLine className="mt-2 text-xs text-muted-foreground">
+          <ActorLabel
+            handle={change.author.handle}
+            initials={change.author.initials}
+            className="max-w-40 shrink-0"
+          />
+          <span className="shrink-0 tabular-nums">
+            updated {change.updated} ago
           </span>
-          <BranchChip>{change.branch}</BranchChip>
-        </span>
-        <MetaSeparator />
-        <Mono className="text-[10px]">{change.sha}</Mono>
-        <MetaSeparator />
-        <Mono className="text-[10px]">
-          {change.filesChanged} files changed
-        </Mono>
-        <MetaSeparator />
-        <Mono className="text-[10px]">
-          <span className="text-ok">+{change.additions}</span>
-          <span className="px-1 text-muted-foreground">/</span>
-          <span className="text-fail">-{change.deletions}</span>
-        </Mono>
-      </div>
+        </MetaLine>
 
-      <p className="max-w-3xl border-l-2 border-border pl-3 text-[12px] leading-relaxed text-muted-foreground">
-        {change.body}
-      </p>
+        <p className="mt-2 max-w-3xl text-xs text-muted-foreground">
+          {change.body}
+        </p>
+
+        <div className="mt-4 flex min-w-0 items-center gap-2 text-xs text-muted-foreground">
+          <BranchPair base={change.baseBranch} head={change.branch} />
+          {/* The size of the change sits with the branches rather than with the
+              author: both answer "how much of the repository is this", and the
+              Diff tab's accessory repeats the pair for the same reason. */}
+          <span className="ml-auto flex shrink-0 items-center gap-3">
+            <FileCount count={change.filesChanged} />
+            <DiffStat
+              additions={change.additions}
+              deletions={change.deletions}
+              className="shrink-0 font-mono text-xs"
+            />
+          </span>
+        </div>
+      </div>
     </header>
   )
 }

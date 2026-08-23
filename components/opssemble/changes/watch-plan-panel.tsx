@@ -1,25 +1,32 @@
 /**
- * Watch Plan tab. Two columns: the editable plan on the left, and a sticky
- * right rail holding the inferred impact, the risk reasoning, and the sources
- * the inference was drawn from.
+ * The Watch Plan tab: what will be watched, by whom, and against what limits.
+ *
+ * Sections rather than cards, and no right rail. The facts at the top are a
+ * label/value stack because that is what they are; boxing them would have made
+ * four surfaces out of four sentences. Agents and signals are lists, so they get
+ * a heading with a count and rows under it.
+ *
+ * Nothing here carries a Required/Proposed pill or an origin badge. The lock and
+ * the switch are the distinction between a required agent and a proposed one,
+ * and the sparkle is the distinction between a signal policy asked for and one
+ * compiled from the author's own sentence.
  */
-import { AlertTriangle, Lock, Pencil, Plus, Sparkles } from "lucide-react"
+import { LockIcon, SparklesIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import type { Change, Signal } from "@/lib/mock-data"
-import { watchPlan } from "@/lib/mock-data"
 import {
-  GridHead,
-  Label,
-  Mono,
-  Muted,
-  OriginBadge,
-  Panel,
-  PanelHeader,
-  Rows,
-  StatusPill,
-} from "@/components/opssemble/kit"
-import { Button, buttonVariants } from "@/components/ui/button"
+  type Change,
+  type PlanAgent,
+  type Signal,
+  watchPlan,
+} from "@/lib/mock-data"
+import { MetaLine, tone } from "@/components/opssemble/presentation"
+import {
+  Chip,
+  MetaRow,
+  Section,
+  SectionHeading,
+} from "@/components/opssemble/layout"
 import { Switch } from "@/components/ui/switch"
 import {
   Tooltip,
@@ -28,187 +35,160 @@ import {
 } from "@/components/ui/tooltip"
 import { RequirementCompiler } from "@/components/opssemble/changes/requirement-compiler"
 
-const AGENT_COLUMNS = "minmax(0,128px) 84px minmax(0,1fr) 24px"
-const SIGNAL_COLUMNS = "minmax(0,1fr) 84px 82px 74px"
+/**
+ * Shared row shape for the two lists. `content-visibility` is here because these
+ * are repeating rows and every one of them is exactly 28px tall -- 16px of line
+ * box inside 12px of padding -- so the intrinsic hint is the real height rather
+ * than a guess, and a skipped row cannot move the scrollbar.
+ */
+const ROW =
+  "group flex items-center gap-2 rounded-md px-2 py-1.5 text-xs [contain-intrinsic-block-size:28px] [content-visibility:auto] hover:bg-accent/60"
 
-function TitleCase({ value }: { value: string }) {
-  return <>{value[0].toUpperCase() + value.slice(1)}</>
+function AgentRow({ agent }: { agent: PlanAgent }) {
+  return (
+    <div className={ROW}>
+      <span className="shrink-0 font-medium">{agent.name}</span>
+      <span className="min-w-0 flex-1 truncate text-muted-foreground">
+        {agent.reason}
+      </span>
+      {agent.selection === "required" ? (
+        <Tooltip>
+          <TooltipTrigger render={<span className="inline-flex shrink-0" />}>
+            <LockIcon
+              role="img"
+              aria-label="Required by policy"
+              className="size-3 text-muted-foreground"
+            />
+          </TooltipTrigger>
+          <TooltipContent>Required by policy</TooltipContent>
+        </Tooltip>
+      ) : (
+        // A proposed agent is on unless somebody has taken it out, so the switch
+        // opens checked and an excluded one is the same control turned off.
+        <Switch
+          size="sm"
+          defaultChecked={agent.selection !== "excluded"}
+          aria-label={`Include the ${agent.name} agent`}
+          className="shrink-0"
+        />
+      )}
+    </div>
+  )
 }
 
-function SignalRow({
-  signal,
-  compiled = false,
-}: {
-  signal: Signal
-  compiled?: boolean
-}) {
+function SignalRow({ signal }: { signal: Signal }) {
+  const compiled = signal.origin !== "policy"
   return (
-    <div
-      style={{ gridTemplateColumns: SIGNAL_COLUMNS }}
-      className={cn(
-        "ops-row grid items-center gap-3 py-2",
-        compiled ? "border-l-2 border-ok pr-3 pl-[10px]" : "px-3"
-      )}
-    >
-      <span className="flex min-w-0 items-center gap-1.5">
-        <span className="truncate text-[12px]">{signal.name}</span>
-        {compiled ? (
-          <Sparkles aria-hidden className="size-3 shrink-0 text-ok" />
-        ) : null}
-      </span>
-      <span className="truncate text-[11px] text-muted-foreground">
+    <div className={ROW}>
+      <span className="shrink-0 font-medium">{signal.name}</span>
+      <span className="min-w-0 flex-1 truncate text-muted-foreground">
         {signal.provider}
       </span>
-      <Mono className="font-medium">{signal.threshold}</Mono>
-      <OriginBadge origin={signal.origin} />
+      <Tooltip>
+        {/* The threshold is the condition abbreviated, so the sentence it stands
+            for is a tooltip rather than a second column nobody reads twice. */}
+        <TooltipTrigger
+          render={<span className="shrink-0 font-mono tabular-nums" />}
+        >
+          {signal.threshold}
+        </TooltipTrigger>
+        <TooltipContent>{signal.condition}</TooltipContent>
+      </Tooltip>
+      {/* The slot is always reserved. A mixed list of compiled and policy
+          signals would otherwise ladder its right edge by the width of one
+          glyph, which reads as a mistake rather than as a distinction. */}
+      <span className="flex size-3 shrink-0 items-center justify-center">
+        {compiled ? (
+          <Tooltip>
+            <TooltipTrigger render={<span className="inline-flex" />}>
+              <SparklesIcon
+                role="img"
+                aria-label="Resolved from your requirement"
+                className={cn("size-3", tone.good)}
+              />
+            </TooltipTrigger>
+            <TooltipContent>Resolved from your requirement</TooltipContent>
+          </Tooltip>
+        ) : null}
+      </span>
     </div>
   )
 }
 
 export function WatchPlanPanel({ change }: { change: Change }) {
+  const signals = [...watchPlan.existingSignals, ...watchPlan.compiledSignals]
+
   return (
-    <div className="flex items-start gap-3">
-      <div className="flex min-w-0 flex-1 flex-col gap-3">
-        <Panel className="flex items-start gap-3 p-3">
-          <div className="min-w-0">
-            <Label>Trigger</Label>
-            <div className="mt-1 text-[12px] font-medium">
-              {watchPlan.trigger}
-            </div>
-            <p className="text-[11px] text-muted-foreground">
+    <>
+      <Section>
+        <MetaRow label="Trigger">
+          <MetaLine>
+            <span className="shrink-0">{watchPlan.trigger}</span>
+            <span className="min-w-0 truncate text-muted-foreground">
               {watchPlan.triggerDetail}
-            </p>
-          </div>
-          <div className="flex-1" />
-          <Button variant="ghost" size="icon-sm" aria-label="Edit trigger">
-            <Pencil />
-          </Button>
-        </Panel>
+            </span>
+          </MetaLine>
+        </MetaRow>
 
-        <Panel>
-          <PanelHeader
-            title="Selected agents"
-            meta={`${watchPlan.agents.length} selected`}
-          />
-          <Rows>
-            {watchPlan.agents.map((agent) => (
-              <div
-                key={agent.key}
-                style={{ gridTemplateColumns: AGENT_COLUMNS }}
-                className="ops-row grid items-center gap-3 px-3 py-2"
-              >
-                <span className="truncate text-[12px] font-medium">
-                  {agent.name}
-                </span>
-                <StatusPill
-                  status={agent.selection === "required" ? "ok" : "brand"}
-                  dot={false}
-                >
-                  <TitleCase value={agent.selection} />
-                </StatusPill>
-                <span className="truncate text-[12px] text-muted-foreground">
-                  {agent.reason}
-                </span>
-                {agent.selection === "required" ? (
-                  <Tooltip>
-                    <TooltipTrigger
-                      className={buttonVariants({
-                        variant: "ghost",
-                        size: "icon-xs",
-                        className: "text-muted-foreground",
-                      })}
-                      aria-label={`${agent.name} is required by policy`}
-                    >
-                      <Lock />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      Policy requires this agent. It cannot be removed.
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <Switch
-                    size="sm"
-                    defaultChecked
-                    aria-label={`Include the ${agent.name} agent`}
-                  />
-                )}
-              </div>
-            ))}
-          </Rows>
-        </Panel>
+        <MetaRow label="Impact">
+          <span className="block min-w-0">
+            {change.impact.headline}
+            <span className="mt-0.5 block text-muted-foreground">
+              {change.impact.detail}
+            </span>
+          </span>
+        </MetaRow>
 
-        <Panel>
-          <PanelHeader
-            title="Signals and guardrails"
-            meta={`${watchPlan.existingSignals.length + watchPlan.compiledSignals.length} active`}
-            action={
-              <Button variant="ghost" size="icon-sm" aria-label="Add signal">
-                <Plus />
-              </Button>
-            }
-          />
-          <GridHead
-            columns={["Signal", "Provider", "Threshold", "Origin"]}
-            template={SIGNAL_COLUMNS}
-          />
-          <Rows>
-            {watchPlan.existingSignals.map((signal) => (
-              <SignalRow key={signal.id} signal={signal} />
+        <MetaRow label="Risk factors">
+          {/* The chip's own width cap is lifted here: these are short sentences
+              rather than labels, and a capped chip wraps its text inside a
+              rounded-full outline, which reads as a broken pill. */}
+          <span className="flex min-w-0 flex-wrap gap-1.5">
+            {change.riskReasons.map((reason) => (
+              <Chip key={reason} className="max-w-none">
+                {reason}
+              </Chip>
             ))}
-            {watchPlan.compiledSignals.map((signal) => (
-              <SignalRow key={signal.id} signal={signal} compiled />
-            ))}
-          </Rows>
-        </Panel>
+          </span>
+        </MetaRow>
 
-        <RequirementCompiler />
+        <MetaRow label="Sources">
+          {/* The label is what a reader acts on; the detail behind it is either
+              the diff stat the header already shows or a file list too long for
+              the row, so it rides in a tooltip. */}
+          <MetaLine className="text-muted-foreground">
+            {change.sources.map((source) => (
+              <Tooltip key={source.label}>
+                <TooltipTrigger render={<span className="shrink-0" />}>
+                  {source.label}
+                </TooltipTrigger>
+                <TooltipContent>{source.detail}</TooltipContent>
+              </Tooltip>
+            ))}
+          </MetaLine>
+        </MetaRow>
+      </Section>
+
+      <SectionHeading title="Agents" count={watchPlan.agents.length} />
+      <div className="px-4 pb-4">
+        {watchPlan.agents.map((agent) => (
+          <AgentRow key={agent.key} agent={agent} />
+        ))}
       </div>
 
-      <aside className="sticky top-4 hidden w-[280px] shrink-0 flex-col gap-3 self-start lg:flex">
-        <Panel className="p-3">
-          <Label>Inferred impact</Label>
-          <h2 className="mt-1.5 text-[13px] leading-snug font-medium">
-            {change.impact.headline}
-          </h2>
-          <Muted className="mt-1 text-[11px]">{change.impact.detail}</Muted>
-        </Panel>
+      <SectionHeading title="Signals and guardrails" count={signals.length} />
+      <div className="px-4 pb-4">
+        {signals.map((signal) => (
+          <SignalRow key={signal.id} signal={signal} />
+        ))}
+      </div>
 
-        <Panel>
-          <div className="px-3 pt-2.5 pb-2">
-            <Label>Why {change.risk} risk</Label>
-          </div>
-          <Rows className="border-t border-border">
-            {change.riskReasons.map((reason) => (
-              <div
-                key={reason}
-                className="flex items-start gap-2 px-3 py-2 text-[12px]"
-              >
-                <AlertTriangle
-                  aria-hidden
-                  className="mt-0.5 size-3 shrink-0 text-warn"
-                />
-                <span className="min-w-0 leading-snug">{reason}</span>
-              </div>
-            ))}
-          </Rows>
-        </Panel>
-
-        <Panel>
-          <div className="px-3 pt-2.5 pb-2">
-            <Label>Sources</Label>
-          </div>
-          <Rows className="border-t border-border">
-            {change.sources.map((source) => (
-              <div key={source.label} className="px-3 py-2">
-                <div className="text-[12px] font-medium">{source.label}</div>
-                <Mono className="text-[10px] text-muted-foreground">
-                  {source.detail}
-                </Mono>
-              </div>
-            ))}
-          </Rows>
-        </Panel>
-      </aside>
-    </div>
+      <RequirementCompiler
+        draft={watchPlan.requirementDraft}
+        resolved={watchPlan.compilation.resolved}
+        unresolved={watchPlan.compilation.unresolved}
+        onFailure={watchPlan.compilation.onFailure}
+      />
+    </>
   )
 }

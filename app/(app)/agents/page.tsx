@@ -1,29 +1,45 @@
+import type { Metadata } from "next"
+
 import { agents } from "@/lib/mock-data"
-import { Muted, PageHeader } from "@/components/opssemble/kit"
-import { AgentCard } from "@/components/opssemble/registry/agent-card"
 import { Button } from "@/components/ui/button"
+import { EmptyLine, PageBody, PageHeader } from "@/components/opssemble/layout"
+import { AgentRow } from "@/components/opssemble/registry/agent-row"
+
+export const metadata: Metadata = {
+  title: "Agents",
+}
 
 export default function AgentsPage() {
   return (
-    <div className="flex min-h-full flex-col">
+    // The shell's main is already a flex column, so the page only has to claim
+    // its height for the body below to own the scrolling.
+    <div className="flex h-full min-h-0 flex-col">
       <PageHeader
         title="Agent registry"
-        subtitle="Capabilities, selection rules, tools, permissions, and health"
-        actions={<Button>Create agent</Button>}
+        subtitle="Capabilities, selection rules, tools, and health"
+        actions={
+          // Outline, not primary: creating an agent is not the consequential act
+          // on this screen -- arming a contract is, two screens over.
+          <Button size="xs" variant="outline">
+            Create agent
+          </Button>
+        }
       />
 
-      <div className="flex flex-col gap-3 px-5 py-4">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <PageBody>
+        <ul className="px-2 py-2">
           {agents.map((agent) => (
-            <AgentCard key={agent.key} agent={agent} />
+            <AgentRow key={agent.key} agent={agent} />
           ))}
-        </div>
+        </ul>
 
-        <Muted>
-          Required selections come from policy. Proposed selections come from
-          code and context analysis. Every reason is visible in the Watch Plan.
-        </Muted>
-      </div>
+        {/* Where a selection comes from is the question this list raises and does
+            not answer, so it closes with the answer rather than a legend. */}
+        <EmptyLine>
+          Required selections come from policy. Proposed selections come from code
+          and context analysis. Every reason is visible in the Watch Plan.
+        </EmptyLine>
+      </PageBody>
     </div>
   )
 }

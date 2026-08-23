@@ -38,23 +38,25 @@ The intended walkthrough is `/changes` → `/changes/184` → arm → `/missions
 ## How it is built
 
 - **Next.js 16** App Router. Screens are server components; only interactive
-  leaves (`inbox-filters`, `requirement-compiler`, `diff-viewer`,
-  `agent-run-card`, `repair-dialog`, `policy-row`, tab shells) are client
+  leaves (`list-filters`, `requirement-compiler`, `diff-viewer`,
+  `agent-run-card`, `repair-dialog`, `policy-row`, the tab shell) are client
   components.
 - **shadcn/ui** on Base UI. Note there is no `asChild` in this build — compose
   with `render={<Element />}`.
-- **`components/opssemble/kit.tsx`** holds the shared primitives (`Panel`,
-  `StatusPill`, `Metric`, `Row`, `PageHeader`, `ActionBar`, `GridHead`) so
-  density and colour stay consistent across screens.
-- **[`docs/mock-ui-design-spec.md`](./docs/mock-ui-design-spec.md)** is the
-  binding style contract: hairline borders and no shadows, monospace with
-  tabular figures for every identifier and threshold, colour reserved for
-  status, and a sticky action bar that states the consequence of its primary
-  button.
+- **[`DESIGN.md`](./DESIGN.md)** is the binding design system. It is derived from
+  the real [T3 Code](https://github.com/pingdotgg/t3code) pull-request UI, read
+  from source and from its running build's compiled CSS — theme tokens, type
+  scale, the three-zone row geometry, and the restraint rules all come from that
+  implementation. Read it before changing any screen.
+- `components/opssemble/presentation.tsx` owns every status tone and glyph;
+  `layout.tsx` owns structure. A screen composes them and never defines a colour.
 
-Source wireframes live in
-[`docs/visual-plan/opssemble-product/`](./docs/visual-plan/opssemble-product/)
-and the written plan is in [`docs/`](./docs/).
+The governing rule is that **colour is spent only on a status, and only once per
+item** — a state is a glyph, or a tone on an identifier, or one lowercased
+coloured word, never a pill with a tint and a dot and coloured text.
+
+Source wireframes for the product live in
+[`docs/visual-plan/opssemble-product/`](./docs/visual-plan/opssemble-product/).
 
 ## Verify
 

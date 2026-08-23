@@ -1,23 +1,26 @@
 import type { Metadata } from "next"
-import { Geist_Mono, Inter } from "next/font/google"
 
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TooltipProvider } from "@/components/ui/tooltip"
-import { cn } from "@/lib/utils"
-
-const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
-
-const fontMono = Geist_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-})
 
 export const metadata: Metadata = {
   title: "Opssemble",
   description:
     "Operational coverage for every change. Watch Plans, Release Contracts, and agent-run Release Missions.",
 }
+
+/**
+ * The system UI stack rather than a webfont. A native face is a large part of
+ * why a dense tool reads as an application instead of a document, and it removes
+ * the layout shift a loading webfont costs on first paint.
+ */
+const fontVariables = {
+  "--font-sans":
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+  "--font-mono":
+    'ui-monospace, "SF Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace',
+} as React.CSSProperties
 
 export default function RootLayout({
   children,
@@ -28,12 +31,8 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={cn(
-        "antialiased",
-        fontMono.variable,
-        "font-sans",
-        inter.variable
-      )}
+      className="font-sans antialiased"
+      style={fontVariables}
     >
       <body>
         <ThemeProvider defaultTheme="dark">
