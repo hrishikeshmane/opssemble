@@ -28,7 +28,7 @@ export function SegmentedTabs<T extends string>({
   return (
     <div
       className={cn(
-        "flex min-w-0 items-center gap-1 overflow-x-auto border-t border-border/60 px-4 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "flex min-w-0 [scrollbar-width:none] items-center gap-1 overflow-x-auto border-t border-border/60 px-4 py-2 [&::-webkit-scrollbar]:hidden",
         className
       )}
     >
@@ -56,7 +56,7 @@ export function SegmentedTabs<T extends string>({
         ))}
       </ToggleGroup>
       {accessory ? (
-        <div className="ml-auto flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+        <div className="ml-auto hidden shrink-0 items-center gap-1.5 text-xs text-muted-foreground sm:flex">
           {accessory}
         </div>
       ) : null}

@@ -21,16 +21,16 @@ Press <kbd>d</kbd> to toggle light and dark. The mock is designed dark-first.
 
 ## Screens
 
-| Route | What it shows |
-|---|---|
-| `/changes` | Changes inbox — operational coverage for every connected pull request |
-| `/changes/184` | **Change detail** — the centrepiece. Watch Plan, Diff, and Timeline tabs |
-| `/missions` | Release Missions queue — every execution created from an armed contract |
-| `/missions/m-184-candidate` | Mission running — live agent work, tool calls, guardrails |
-| `/missions/m-flag-dialup` | Mission held — policy decision, evidence, bounded Codex repair |
-| `/agents` | Agent registry — capabilities, selection rules, tools, health |
-| `/policies` | Policies — the deterministic rules that authorize promote, hold, restore, repair |
-| `/integrations` | Integration health and the safety boundary |
+| Route                       | What it shows                                                                      |
+| --------------------------- | ---------------------------------------------------------------------------------- |
+| `/changes`                  | Changes inbox — operational coverage for every connected pull request              |
+| `/changes/184`              | **Change detail** — Watch Plan, Blast Radius, Stress Test, Diff, and Timeline tabs |
+| `/missions`                 | Release Missions queue — every execution created from an armed contract            |
+| `/missions/m-184-candidate` | Mission running — live agent work, tool calls, guardrails                          |
+| `/missions/m-flag-dialup`   | Mission held — policy decision, evidence, bounded Codex repair                     |
+| `/agents`                   | Agent registry — capabilities, selection rules, tools, health                      |
+| `/policies`                 | Policies — the deterministic rules that authorize promote, hold, restore, repair   |
+| `/integrations`             | Integration health and the safety boundary                                         |
 
 The intended walkthrough is `/changes` → `/changes/184` → arm → `/missions/m-184-candidate`
 → `/missions/m-flag-dialup` → Repair with Codex.
@@ -50,6 +50,10 @@ The intended walkthrough is `/changes` → `/changes/184` → arm → `/missions
   implementation. Read it before changing any screen.
 - `components/opssemble/presentation.tsx` owns every status tone and glyph;
   `layout.tsx` owns structure. A screen composes them and never defines a colour.
+- The Blast Radius report combines the diff, dependency graph, architecture,
+  runbook, and relevant change history into an explained `0–10` impact score.
+  The Stress Test compares equivalent `main` and feature-branch sandboxes across
+  throughput, latency, CPU, breaking point, sustained load, and recovery.
 
 The governing rule is that **colour is spent only on a status, and only once per
 item** — a state is a glyph, or a tone on an identifier, or one lowercased

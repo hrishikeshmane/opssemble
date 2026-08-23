@@ -3,10 +3,10 @@
 /**
  * The tab shell for the change detail.
  *
- * Every panel arrives as a node, so the watch plan, the diff and the timeline
+ * Every panel arrives as a node, so the analyses, the diff and the timeline
  * stay server-rendered and only the selection lives on the client.
  *
- * Only the selected panel is mounted. Keeping the other two around behind
+ * Only the selected panel is mounted. Keeping the other panels around behind
  * `invisible` would preserve their scroll offsets, but invisible content is
  * still in the accessibility tree and still takes tab focus, so a reader on the
  * Watch Plan tab could tab into the diff. Losing a scroll offset is the cheaper
@@ -20,6 +20,8 @@ import { SegmentedTabs } from "@/components/opssemble/segmented-tabs"
 
 const TABS = [
   { value: "watch-plan", label: "Watch Plan" },
+  { value: "blast-radius", label: "Blast Radius" },
+  { value: "stress-test", label: "Stress Test" },
   { value: "diff", label: "Diff" },
   { value: "timeline", label: "Timeline" },
 ] as const
@@ -28,20 +30,28 @@ type TabValue = (typeof TABS)[number]["value"]
 
 export function ChangeDetailTabs({
   planSummary,
+  blastSummary,
   filesChanged,
   additions,
   deletions,
   eventCount,
+  stressSummary,
   watchPlan,
+  blastRadius,
+  stressTest,
   diff,
   timeline,
 }: {
   planSummary: string
+  blastSummary: string
   filesChanged: number
   additions: number
   deletions: number
   eventCount: number
+  stressSummary: string
   watchPlan: React.ReactNode
+  blastRadius: React.ReactNode
+  stressTest: React.ReactNode
   diff: React.ReactNode
   timeline: React.ReactNode
 }) {
@@ -52,6 +62,10 @@ export function ChangeDetailTabs({
   const accessory =
     tab === "watch-plan" ? (
       planSummary
+    ) : tab === "blast-radius" ? (
+      <span className="tabular-nums">{blastSummary}</span>
+    ) : tab === "stress-test" ? (
+      <span className="font-mono tabular-nums">{stressSummary}</span>
     ) : tab === "diff" ? (
       <>
         <FileCount count={filesChanged} />
@@ -81,6 +95,8 @@ export function ChangeDetailTabs({
           reflow every line to the left as the scrollbar appears. */}
       <PageBody className="[scrollbar-gutter:stable]">
         {tab === "watch-plan" ? watchPlan : null}
+        {tab === "blast-radius" ? blastRadius : null}
+        {tab === "stress-test" ? stressTest : null}
         {tab === "diff" ? diff : null}
         {tab === "timeline" ? timeline : null}
       </PageBody>

@@ -5,22 +5,12 @@
  */
 
 export type Status =
-  | "ok"
-  | "warn"
-  | "fail"
-  | "running"
-  | "queued"
-  | "idle"
-  | "brand"
+  "ok" | "warn" | "fail" | "running" | "queued" | "idle" | "brand"
 
 export type Risk = "low" | "medium" | "high"
 
 export type PlanState =
-  | "not-required"
-  | "draft"
-  | "needs-input"
-  | "ready"
-  | "armed"
+  "not-required" | "draft" | "needs-input" | "ready" | "armed"
 
 export type Verdict = "pass" | "fail" | "running" | "queued" | "hold"
 
@@ -227,7 +217,8 @@ const retryDiff: ChangeFile[] = [
     language: "ts",
     hunks: [
       {
-        header: "@@ -44,7 +44,9 @@ export async function POST(request: Request)",
+        header:
+          "@@ -44,7 +44,9 @@ export async function POST(request: Request)",
         lines: [
           {
             kind: "ctx",
@@ -426,11 +417,7 @@ export function getChange(id: string) {
 /* ---------------------------------------------------------------- agents --- */
 
 export type AgentKey =
-  | "impact"
-  | "resilience"
-  | "performance"
-  | "product-health"
-  | "repair"
+  "impact" | "resilience" | "performance" | "product-health" | "repair"
 
 export type Agent = {
   key: AgentKey
@@ -593,14 +580,721 @@ export const watchPlan = {
   },
 } as const
 
+/* ------------------------------------------------------ blast radius report --- */
+
+export type BlastRadiusFactor = {
+  id: string
+  label: string
+  score: number
+  weight: number
+  rationale: string
+}
+
+export type BlastRadiusLayer = {
+  id: "changed-code" | "direct-dependencies" | "customer-operations"
+  label: string
+  detail: string
+  surfaces: {
+    id: string
+    name: string
+    detail: string
+  }[]
+}
+
+export type BlastRadiusFinding = {
+  id: string
+  risk: Risk
+  title: string
+  detail: string
+  evidence: string
+}
+
+export type BlastRadiusEvidence = {
+  id: string
+  kind: "diff" | "architecture" | "runbook" | "history"
+  label: string
+  reference: string
+  detail: string
+}
+
+export const blastRadiusReport = {
+  changeId: "184",
+  score: 8.2,
+  maxScore: 10,
+  risk: "high" as Risk,
+  surfaceCount: 9,
+  headline: "High blast radius across checkout payment completion",
+  detail:
+    "The retry now surrounds an irreversible payment side effect while generating a new idempotency key for every attempt. A lost Stripe response can therefore become a duplicate charge, and the longer deadline keeps checkout workers occupied during provider degradation.",
+  candidate: {
+    branch: "retry-safety",
+    sha: "a17c92e",
+  },
+  baseline: {
+    branch: "main",
+    sha: "9d31bc2",
+  },
+  contextSummary:
+    "GitHub diff, dependency graph, ARCHITECTURE.md, RUNBOOK.md, and reverted PR #121",
+  method:
+    "Composite average of five equally weighted factors from 0 isolated to 10 system-wide",
+  generatedAt: "Aug 23, 18:03 UTC",
+  duration: "38s",
+  agent: "Impact agent",
+  factors: [
+    {
+      id: "customer-criticality",
+      label: "Customer criticality",
+      score: 10,
+      weight: 20,
+      rationale:
+        "Runs in checkout before payment confirmation and gates order completion.",
+    },
+    {
+      id: "state-mutation",
+      label: "State mutation",
+      score: 9,
+      weight: 20,
+      rationale:
+        "A retry can repeat Stripe Payment Intent creation after the first request succeeds.",
+    },
+    {
+      id: "dependency-fan-out",
+      label: "Dependency fan-out",
+      score: 8,
+      weight: 20,
+      rationale:
+        "The changed path reaches Stripe, order persistence, fulfillment, and cohort tracking.",
+    },
+    {
+      id: "recovery-sensitivity",
+      label: "Recovery sensitivity",
+      score: 8,
+      weight: 20,
+      rationale:
+        "Longer deadlines hold checkout workers and slow recovery during provider degradation.",
+    },
+    {
+      id: "exposure-breadth",
+      label: "Exposure breadth",
+      score: 6,
+      weight: 20,
+      rationale:
+        "A feature flag limits initial exposure, but its enabled cohort spans EU checkout traffic.",
+    },
+  ] satisfies BlastRadiusFactor[],
+  layers: [
+    {
+      id: "changed-code",
+      label: "Changed code",
+      detail: "Symbols and behavior introduced by this diff.",
+      surfaces: [
+        {
+          id: "with-retry",
+          name: "StripeClient.withRetry",
+          detail: "Retries createPaymentIntent up to MAX_ATTEMPTS.",
+        },
+        {
+          id: "idempotency-key",
+          name: "idempotencyKey(attempt)",
+          detail: "Generates a fresh key for each retry attempt.",
+        },
+        {
+          id: "checkout-timeout",
+          name: "Checkout POST timeout",
+          detail: "Expands the deadline from 3s to 12s behind the flag.",
+        },
+      ],
+    },
+    {
+      id: "direct-dependencies",
+      label: "Direct dependencies",
+      detail: "Service boundaries and state reached immediately.",
+      surfaces: [
+        {
+          id: "stripe-payment-intents",
+          name: "Stripe Payment Intents",
+          detail:
+            "The external side effect can succeed before the client sees a response.",
+        },
+        {
+          id: "order-persistence",
+          name: "Order persistence",
+          detail:
+            "The payment result controls whether the order becomes payable.",
+        },
+        {
+          id: "retry-flag",
+          name: "smart-payment-retry-v2",
+          detail: "The flag controls the longer deadline and retry exposure.",
+        },
+      ],
+    },
+    {
+      id: "customer-operations",
+      label: "Customer and operations",
+      detail: "Journeys and operational paths that inherit the behavior.",
+      surfaces: [
+        {
+          id: "payment-success",
+          name: "Payment success",
+          detail:
+            "Duplicate or ambiguous attempts can block checkout completion.",
+        },
+        {
+          id: "fulfillment-dispatch",
+          name: "Fulfillment dispatch",
+          detail:
+            "Order state can advance from a payment outcome observed more than once.",
+        },
+        {
+          id: "eu-checkout",
+          name: "EU checkout completion",
+          detail:
+            "The flagged cohort is the widest monitored customer journey.",
+        },
+      ],
+    },
+  ] satisfies BlastRadiusLayer[],
+  findings: [
+    {
+      id: "retry-side-effect",
+      risk: "high",
+      title: "Retry surrounds an irreversible payment side effect",
+      detail:
+        "Stripe may accept the first request before its response is lost, so the retry cannot assume the operation failed.",
+      evidence: "src/payments/stripe-client.ts:19 · RUNBOOK.md payment retries",
+    },
+    {
+      id: "rotating-key",
+      risk: "high",
+      title: "Idempotency key rotates on every attempt",
+      detail:
+        "A fresh key defeats Stripe de-duplication and lets two attempts create distinct Payment Intents for one checkout.",
+      evidence: "src/payments/idempotency.ts:1 · reverted PR #121",
+    },
+    {
+      id: "timeout-expansion",
+      risk: "medium",
+      title: "Flagged timeout quadruples checkout occupancy",
+      detail:
+        "The 3s to 12s deadline expansion keeps workers attached to degraded Stripe calls and raises saturation risk.",
+      evidence: "src/checkout/route.ts:45 · ARCHITECTURE.md checkout workers",
+    },
+    {
+      id: "coverage-reduction",
+      risk: "medium",
+      title: "Retry regression coverage was reduced",
+      detail:
+        "Five retry assertions were removed while the retry contract and idempotency behavior both changed.",
+      evidence: "tests/payments/retry.test.ts · GitHub diff",
+    },
+  ] satisfies BlastRadiusFinding[],
+  evidence: [
+    {
+      id: "github-diff",
+      kind: "diff",
+      label: "GitHub diff",
+      reference: "PR #184 · a17c92e",
+      detail:
+        "Seven files change the retry loop, idempotency key, checkout deadline, fulfillment path, and regression coverage.",
+    },
+    {
+      id: "architecture",
+      kind: "architecture",
+      label: "Architecture map",
+      reference: "ARCHITECTURE.md · Checkout request path",
+      detail:
+        "Stripe outcome gates order persistence, payment completion, and fulfillment dispatch.",
+    },
+    {
+      id: "runbook",
+      kind: "runbook",
+      label: "Payment runbook",
+      reference: "RUNBOOK.md · Payment retries",
+      detail:
+        "One stable idempotency key is required for the lifetime of a checkout attempt.",
+    },
+    {
+      id: "history",
+      kind: "history",
+      label: "Reverted history",
+      reference: "PR #121",
+      detail:
+        "An earlier retry change was rolled back after duplicate payment attempts.",
+    },
+  ] satisfies BlastRadiusEvidence[],
+} as const
+
+/* --------------------------------------------------------- stress tests --- */
+
+export type StressMetric = "throughput" | "latency" | "cpu"
+
+export type StressPoint = {
+  minute: number
+  finishedTps: number
+  succeededTps: number
+  failedTps: number
+  p50Ms: number
+  p99Ms: number
+  cpuPercent: number
+}
+
+export type StressRun = {
+  role: "Baseline" | "Feature sandbox"
+  branch: string
+  sha: string
+  sandbox: string
+  breakingPointTps: number
+  peakSucceededTps: number
+  recoverySeconds: number
+  points: StressPoint[]
+}
+
+export type StressPhaseResult = {
+  id: "breaking-point" | "increased-load" | "recovery" | "regression"
+  label: string
+  window: string
+  verdict: Verdict
+  baseline: string
+  candidate: string
+  delta: string
+  detail: string
+}
+
+const baselineStressPoints: StressPoint[] = [
+  {
+    minute: 0,
+    finishedTps: 84,
+    succeededTps: 84,
+    failedTps: 0,
+    p50Ms: 92,
+    p99Ms: 180,
+    cpuPercent: 31,
+  },
+  {
+    minute: 2,
+    finishedTps: 110,
+    succeededTps: 110,
+    failedTps: 0,
+    p50Ms: 98,
+    p99Ms: 190,
+    cpuPercent: 36,
+  },
+  {
+    minute: 4,
+    finishedTps: 150,
+    succeededTps: 150,
+    failedTps: 0,
+    p50Ms: 112,
+    p99Ms: 230,
+    cpuPercent: 43,
+  },
+  {
+    minute: 6,
+    finishedTps: 196,
+    succeededTps: 196,
+    failedTps: 0,
+    p50Ms: 126,
+    p99Ms: 300,
+    cpuPercent: 52,
+  },
+  {
+    minute: 8,
+    finishedTps: 208,
+    succeededTps: 207,
+    failedTps: 1,
+    p50Ms: 138,
+    p99Ms: 340,
+    cpuPercent: 57,
+  },
+  {
+    minute: 10,
+    finishedTps: 300,
+    succeededTps: 299,
+    failedTps: 1,
+    p50Ms: 151,
+    p99Ms: 390,
+    cpuPercent: 64,
+  },
+  {
+    minute: 12,
+    finishedTps: 410,
+    succeededTps: 408,
+    failedTps: 2,
+    p50Ms: 168,
+    p99Ms: 450,
+    cpuPercent: 70,
+  },
+  {
+    minute: 14,
+    finishedTps: 500,
+    succeededTps: 497,
+    failedTps: 3,
+    p50Ms: 184,
+    p99Ms: 520,
+    cpuPercent: 76,
+  },
+  {
+    minute: 18,
+    finishedTps: 520,
+    succeededTps: 516,
+    failedTps: 4,
+    p50Ms: 196,
+    p99Ms: 580,
+    cpuPercent: 80,
+  },
+  {
+    minute: 22,
+    finishedTps: 535,
+    succeededTps: 531,
+    failedTps: 4,
+    p50Ms: 204,
+    p99Ms: 620,
+    cpuPercent: 83,
+  },
+  {
+    minute: 26,
+    finishedTps: 548,
+    succeededTps: 543,
+    failedTps: 5,
+    p50Ms: 212,
+    p99Ms: 650,
+    cpuPercent: 85,
+  },
+  {
+    minute: 30,
+    finishedTps: 562,
+    succeededTps: 558,
+    failedTps: 4,
+    p50Ms: 221,
+    p99Ms: 680,
+    cpuPercent: 87,
+  },
+  {
+    minute: 34,
+    finishedTps: 550,
+    succeededTps: 546,
+    failedTps: 4,
+    p50Ms: 217,
+    p99Ms: 700,
+    cpuPercent: 88,
+  },
+  {
+    minute: 36,
+    finishedTps: 282,
+    succeededTps: 281,
+    failedTps: 1,
+    p50Ms: 148,
+    p99Ms: 420,
+    cpuPercent: 62,
+  },
+  {
+    minute: 38,
+    finishedTps: 266,
+    succeededTps: 266,
+    failedTps: 0,
+    p50Ms: 132,
+    p99Ms: 350,
+    cpuPercent: 54,
+  },
+  {
+    minute: 40,
+    finishedTps: 270,
+    succeededTps: 270,
+    failedTps: 0,
+    p50Ms: 124,
+    p99Ms: 310,
+    cpuPercent: 49,
+  },
+  {
+    minute: 42,
+    finishedTps: 265,
+    succeededTps: 265,
+    failedTps: 0,
+    p50Ms: 117,
+    p99Ms: 280,
+    cpuPercent: 45,
+  },
+  {
+    minute: 44,
+    finishedTps: 72,
+    succeededTps: 72,
+    failedTps: 0,
+    p50Ms: 101,
+    p99Ms: 200,
+    cpuPercent: 32,
+  },
+  {
+    minute: 46,
+    finishedTps: 0,
+    succeededTps: 0,
+    failedTps: 0,
+    p50Ms: 88,
+    p99Ms: 170,
+    cpuPercent: 24,
+  },
+]
+
+const candidateStressPoints: StressPoint[] = [
+  {
+    minute: 0,
+    finishedTps: 84,
+    succeededTps: 84,
+    failedTps: 0,
+    p50Ms: 96,
+    p99Ms: 190,
+    cpuPercent: 33,
+  },
+  {
+    minute: 2,
+    finishedTps: 108,
+    succeededTps: 108,
+    failedTps: 0,
+    p50Ms: 112,
+    p99Ms: 220,
+    cpuPercent: 39,
+  },
+  {
+    minute: 4,
+    finishedTps: 150,
+    succeededTps: 149,
+    failedTps: 1,
+    p50Ms: 148,
+    p99Ms: 310,
+    cpuPercent: 49,
+  },
+  {
+    minute: 6,
+    finishedTps: 167,
+    succeededTps: 164,
+    failedTps: 3,
+    p50Ms: 236,
+    p99Ms: 620,
+    cpuPercent: 61,
+  },
+  {
+    minute: 8,
+    finishedTps: 190,
+    succeededTps: 184,
+    failedTps: 6,
+    p50Ms: 340,
+    p99Ms: 910,
+    cpuPercent: 72,
+  },
+  {
+    minute: 10,
+    finishedTps: 260,
+    succeededTps: 244,
+    failedTps: 16,
+    p50Ms: 480,
+    p99Ms: 1240,
+    cpuPercent: 82,
+  },
+  {
+    minute: 12,
+    finishedTps: 330,
+    succeededTps: 302,
+    failedTps: 28,
+    p50Ms: 566,
+    p99Ms: 1450,
+    cpuPercent: 89,
+  },
+  {
+    minute: 14,
+    finishedTps: 390,
+    succeededTps: 347,
+    failedTps: 43,
+    p50Ms: 640,
+    p99Ms: 1660,
+    cpuPercent: 94,
+  },
+  {
+    minute: 18,
+    finishedTps: 430,
+    succeededTps: 370,
+    failedTps: 60,
+    p50Ms: 712,
+    p99Ms: 1810,
+    cpuPercent: 97,
+  },
+  {
+    minute: 22,
+    finishedTps: 448,
+    succeededTps: 380,
+    failedTps: 68,
+    p50Ms: 756,
+    p99Ms: 1940,
+    cpuPercent: 99,
+  },
+  {
+    minute: 26,
+    finishedTps: 438,
+    succeededTps: 362,
+    failedTps: 76,
+    p50Ms: 782,
+    p99Ms: 2000,
+    cpuPercent: 99,
+  },
+  {
+    minute: 30,
+    finishedTps: 420,
+    succeededTps: 338,
+    failedTps: 82,
+    p50Ms: 748,
+    p99Ms: 1920,
+    cpuPercent: 98,
+  },
+  {
+    minute: 34,
+    finishedTps: 400,
+    succeededTps: 316,
+    failedTps: 84,
+    p50Ms: 690,
+    p99Ms: 1840,
+    cpuPercent: 96,
+  },
+  {
+    minute: 36,
+    finishedTps: 216,
+    succeededTps: 205,
+    failedTps: 11,
+    p50Ms: 410,
+    p99Ms: 980,
+    cpuPercent: 76,
+  },
+  {
+    minute: 38,
+    finishedTps: 188,
+    succeededTps: 184,
+    failedTps: 4,
+    p50Ms: 284,
+    p99Ms: 740,
+    cpuPercent: 63,
+  },
+  {
+    minute: 40,
+    finishedTps: 180,
+    succeededTps: 178,
+    failedTps: 2,
+    p50Ms: 214,
+    p99Ms: 540,
+    cpuPercent: 55,
+  },
+  {
+    minute: 42,
+    finishedTps: 174,
+    succeededTps: 173,
+    failedTps: 1,
+    p50Ms: 166,
+    p99Ms: 390,
+    cpuPercent: 48,
+  },
+  {
+    minute: 44,
+    finishedTps: 64,
+    succeededTps: 64,
+    failedTps: 0,
+    p50Ms: 121,
+    p99Ms: 250,
+    cpuPercent: 35,
+  },
+  {
+    minute: 46,
+    finishedTps: 0,
+    succeededTps: 0,
+    failedTps: 0,
+    p50Ms: 94,
+    p99Ms: 180,
+    cpuPercent: 26,
+  },
+]
+
+export const stressTestAnalysis = {
+  changeId: "184",
+  evaluationId: "stx-a17c92e",
+  verdict: "fail" as Verdict,
+  headline: "Feature branch breaks 18% earlier than main",
+  detail:
+    "The new retry path saturates the checkout workers sooner, drops successful throughput under sustained load, and takes 33s longer to return to baseline.",
+  startedAt: "Aug 23, 18:06 UTC",
+  duration: "46m 10s",
+  loadProfile: "checkout-hot-path-v3 · identical seed and traffic mix",
+  stopCondition: "Stop above 10% errors or 2s p99 for 2 minutes",
+  baseline: {
+    role: "Baseline",
+    branch: "main",
+    sha: "9d31bc2",
+    sandbox: "sbx-main-9d31bc2 · us-east-1 · 4 tasks",
+    breakingPointTps: 206,
+    peakSucceededTps: 558,
+    recoverySeconds: 43,
+    points: baselineStressPoints,
+  } satisfies StressRun,
+  candidate: {
+    role: "Feature sandbox",
+    branch: "retry-safety",
+    sha: "a17c92e",
+    sandbox: "sbx-pr184-a17c92e · us-east-1 · 4 tasks",
+    breakingPointTps: 168,
+    peakSucceededTps: 380,
+    recoverySeconds: 76,
+    points: candidateStressPoints,
+  } satisfies StressRun,
+  phaseBoundaries: {
+    breakingPointEndsAt: 10,
+    increasedLoadEndsAt: 34,
+    runEndsAt: 46,
+  },
+  phases: [
+    {
+      id: "breaking-point",
+      label: "Find Breaking Point",
+      window: "0m - 10m",
+      verdict: "fail",
+      baseline: "206 TPS",
+      candidate: "168 TPS",
+      delta: "-18.4%",
+      detail: "Regression limit is -5%.",
+    },
+    {
+      id: "increased-load",
+      label: "Increased Load",
+      window: "10m - 34m",
+      verdict: "fail",
+      baseline: "558 TPS",
+      candidate: "380 TPS",
+      delta: "-31.9%",
+      detail: "Successful peak throughput under the same traffic mix.",
+    },
+    {
+      id: "recovery",
+      label: "Stress Recovery",
+      window: "34m - 46m",
+      verdict: "pass",
+      baseline: "43s",
+      candidate: "76s",
+      delta: "+33s",
+      detail: "Both runs recovered inside the 90s guardrail.",
+    },
+    {
+      id: "regression",
+      label: "Regression Analysis",
+      window: "3 comparable runs",
+      verdict: "fail",
+      baseline: "Stable",
+      candidate: "Regressed",
+      delta: "Hold",
+      detail:
+        "Breaking point and sustained success both crossed policy limits.",
+    },
+  ] satisfies StressPhaseResult[],
+} as const
+
 /* -------------------------------------------------------------- missions --- */
 
 export type MissionStageKey =
-  | "context"
-  | "plan"
-  | "execute"
-  | "evaluate"
-  | "decision"
+  "context" | "plan" | "execute" | "evaluate" | "decision"
 
 export type MissionStage = {
   key: MissionStageKey
@@ -657,9 +1351,7 @@ export type Mission = {
  * Stage sets are per mission: a held mission has reached its decision, so it
  * must not render the running mission's rail.
  */
-function buildStages(
-  values: [string, Status][],
-): MissionStage[] {
+function buildStages(values: [string, Status][]): MissionStage[] {
   const labels = [
     ["context", "Context"],
     ["plan", "Plan"],
@@ -770,7 +1462,8 @@ export const missionRuns: AgentRun[] = [
         status: "running",
         duration: "24s",
         summary: "Delay the first response after Stripe accepts the request.",
-        input: "{ profile: 'lost_response', target: 'dpl_8KL2', ceiling: '60s' }",
+        input:
+          "{ profile: 'lost_response', target: 'dpl_8KL2', ceiling: '60s' }",
       },
     ],
     observations: [

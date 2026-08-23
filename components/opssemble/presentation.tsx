@@ -45,6 +45,18 @@ export const tone = {
   absent: "text-muted-foreground/70",
 } as const
 
+/**
+ * Chart strokes use the same semantic palette as status presentation, but as
+ * CSS values because Recharts paints SVG attributes rather than class names.
+ */
+export const chartTone = {
+  primary: "var(--primary)",
+  good: "var(--success-foreground)",
+  bad: "var(--destructive)",
+  limit: "var(--warning-foreground)",
+  muted: "var(--muted-foreground)",
+} as const
+
 type Tone = (typeof tone)[keyof typeof tone]
 
 interface StatePresentation {
@@ -273,7 +285,9 @@ export function FileCount({
   className?: string
 }) {
   return (
-    <span className={cn("inline-flex items-center gap-1.5 tabular-nums", className)}>
+    <span
+      className={cn("inline-flex items-center gap-1.5 tabular-nums", className)}
+    >
       <FileDiffIcon aria-hidden className="size-3.5 shrink-0" />
       {count.toLocaleString()}
       {withWord ? (count === 1 ? " file" : " files") : null}
@@ -389,7 +403,11 @@ export function BranchPair({
       )}
     >
       <span className="max-w-[40%] shrink-0 truncate">{base}</span>
-      <span aria-label="receives changes from" role="img" className="shrink-0 opacity-60">
+      <span
+        aria-label="receives changes from"
+        role="img"
+        className="shrink-0 opacity-60"
+      >
         &larr;
       </span>
       <span className="min-w-0 truncate">{head}</span>
@@ -399,7 +417,5 @@ export function BranchPair({
 
 /** The abbreviated oid, which is what a reader matches against a commit list. */
 export function Sha({ sha, className }: { sha: string; className?: string }) {
-  return (
-    <code className={cn("font-mono", className)}>{sha.slice(0, 7)}</code>
-  )
+  return <code className={cn("font-mono", className)}>{sha.slice(0, 7)}</code>
 }
