@@ -1,0 +1,26 @@
+{
+  "changeId": "snapshot-pr-booking-timeout-retry",
+  "dataMode": "snapshot",
+  "repository": "Prathamesh-Pawar/flylab",
+  "repositoryUrl": "https://github.com/Prathamesh-Pawar/flylab",
+  "number": 103,
+  "title": "Retry booking provider response timeouts",
+  "state": "open",
+  "headSha": "3333333333333333333333333333333333333333",
+  "baseSha": "0000000000000000000000000000000000000000",
+  "mergeSha": null,
+  "releaseSha": null,
+  "changedFiles": [
+    {"path": "app/api/book/route.ts", "additions": 62, "deletions": 0},
+    {"path": "lib/booking-provider.ts", "additions": 71, "deletions": 0},
+    {"path": "tests/booking-api.test.ts", "additions": 43, "deletions": 0}
+  ],
+  "diff": "diff --git a/app/api/book/route.ts b/app/api/book/route.ts\nnew file mode 100644\n--- /dev/null\n+++ b/app/api/book/route.ts\n@@ -0,0 +1,5 @@\n+export async function POST(request: Request) {\n+  const input = await request.json();\n+  const firstAttempt = () => reserve(input, createAttemptKey());\n+  return Response.json(await retryOnce(firstAttempt, () => reserve(input, createAttemptKey())));\n+}\n",
+  "repositoryDocs": {
+    "README.md": "FlightLab is a deterministic SFO to JFK booking application. Runtime triggers are neutral and signed.",
+    "docs/ARCHITECTURE.md": "Booking APIs own reservation execution while external monitoring owns provider-shaped observations.",
+    "docs/RUNBOOK.md": "A response timeout can occur after the provider has committed a reservation."
+  },
+  "checks": {"state": "success", "required": [{"name": "test", "status": "completed", "conclusion": "success"}]},
+  "deployment": {"state": "pending", "url": null}
+}

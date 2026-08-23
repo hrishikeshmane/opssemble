@@ -1,5 +1,7 @@
 # Opssemble Fake Operations MCP Requirements
 
+> Superseded for implementation by [`monitoring/README.md`](../../monitoring/README.md). This file is historical product context; FlightLab no longer owns fixtures, scenario declarations, or provider-shaped observations.
+
 > **Status:** Hackathon requirements
 >
 > **Implementation:** Python FastMCP server

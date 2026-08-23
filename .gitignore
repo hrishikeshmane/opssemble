@@ -30,6 +30,13 @@ pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# Python monitoring service
+/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
 
 # typescript
 *.tsbuildinfo

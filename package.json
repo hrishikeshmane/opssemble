@@ -9,9 +9,11 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "smoke:mcp": "node mcp/ai-sdk-smoke.mjs"
   },
   "dependencies": {
+    "@ai-sdk/mcp": "^2.0.36",
     "@base-ui/react": "^1.7.0",
     "@radix-ui/react-use-controllable-state": "^1.2.6",
     "@rive-app/react-webgl2": "^4.32.1",

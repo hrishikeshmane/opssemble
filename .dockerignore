@@ -1,0 +1,11 @@
+.git
+.next
+.venv
+node_modules
+__pycache__
+*.py[cod]
+.pytest_cache
+.env*
+!.env.example
+coverage
+npm-debug.log*
