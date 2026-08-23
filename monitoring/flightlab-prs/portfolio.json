@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "changes": [
+    {
+      "id": "smart-seat-bundles",
+      "title": "Smart Seat Bundles",
+      "label": "opssemble:smart-seat-bundles",
+      "patch": "smart-seat-bundles.patch"
+    },
+    {
+      "id": "flexible-date-search",
+      "title": "Flexible-Date Search",
+      "label": "opssemble:flexible-date-search",
+      "patch": "flexible-date-search.patch"
+    },
+    {
+      "id": "booking-timeout-retry",
+      "title": "Booking Timeout Retry",
+      "label": "opssemble:booking-timeout-retry",
+      "patch": "booking-timeout-retry.patch"
+    }
+  ]
+}

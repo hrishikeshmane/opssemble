@@ -1,5 +1,7 @@
 # FlightLab Fixture-Backed Demo Implementation Plan
 
+> Superseded for implementation by [`monitoring/README.md`](../../monitoring/README.md). This file is historical context; generated observations and scenario definitions now live only in Opssemble monitoring.
+
 > **Reference design, not the four-hour build sequence.** Use
 > [`2026-08-23-three-engineer-hackathon-critical-path.md`](./2026-08-23-three-engineer-hackathon-critical-path.md)
 > as the canonical hackathon plan. This document preserves the larger FlightLab

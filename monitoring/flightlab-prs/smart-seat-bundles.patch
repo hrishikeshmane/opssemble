@@ -1,0 +1,100 @@
+diff --git a/lib/seat-scoring.ts b/lib/seat-scoring.ts
+new file mode 100644
+index 0000000..db51c4d
+--- /dev/null
++++ b/lib/seat-scoring.ts
+@@ -0,0 +1,36 @@
++export type SeatBundle = {
++  id: string;
++  name: string;
++  priceCents: number;
++  legroomInches: number;
++  refundable: boolean;
++};
++
++export type ScoredSeatBundle = SeatBundle & { score: number };
++
++export const seatBundles: SeatBundle[] = [
++  { id: "standard", name: "Standard", priceCents: 0, legroomInches: 31, refundable: false },
++  { id: "extra-legroom", name: "Extra legroom", priceCents: 6400, legroomInches: 36, refundable: false },
++  { id: "flex", name: "Flex", priceCents: 11200, legroomInches: 34, refundable: true },
++];
++
++export type ScoreBundle = (bundle: SeatBundle, preferredBundleId?: string) => Promise<number>;
++
++export async function scoreSeatBundles(
++  preferredBundleId?: string,
++  scoreBundle: ScoreBundle = defaultScoreBundle,
++): Promise<ScoredSeatBundle[]> {
++  const scored: ScoredSeatBundle[] = [];
++  for (const bundle of seatBundles) {
++    // These independent provider-backed scores are intentionally awaited serially.
++    const score = await scoreBundle(bundle, preferredBundleId);
++    scored.push({ ...bundle, score });
++  }
++  return scored.sort((left, right) => right.score - left.score);
++}
++
++async function defaultScoreBundle(bundle: SeatBundle, preferredBundleId?: string): Promise<number> {
++  await new Promise((resolve) => setTimeout(resolve, 180));
++  return bundle.legroomInches * 4 - bundle.priceCents / 1000 +
++    (bundle.refundable ? 18 : 0) + (bundle.id === preferredBundleId ? 40 : 0);
++}
+diff --git a/app/api/seat-scores/route.ts b/app/api/seat-scores/route.ts
+new file mode 100644
+index 0000000..480e0e7
+--- /dev/null
++++ b/app/api/seat-scores/route.ts
+@@ -0,0 +1,19 @@
++import { randomUUID } from "node:crypto";
++import { NextResponse } from "next/server";
++import { runWithRuntimeEnvelope } from "@/lib/runtime-envelope";
++import { scoreSeatBundles } from "@/lib/seat-scoring";
++
++export async function POST(request: Request): Promise<NextResponse> {
++  const body = await request.json() as { flightId?: string; preferredBundleId?: string };
++  const requestId = request.headers.get("x-request-id") ?? randomUUID();
++  const operationId = `seat-${body.flightId ?? "unknown"}`;
++  const execution = await runWithRuntimeEnvelope<Record<string, unknown>>(
++    { route: "/api/seat-scores", requestId, operationId },
++    async () => {
++      if (!body.flightId) return { result: { error: "flightId is required" }, statusCode: 400 };
++      const bundles = await scoreSeatBundles(body.preferredBundleId);
++      return { result: { flightId: body.flightId, bundles }, statusCode: 200 };
++    },
++  );
++  return NextResponse.json(execution.result, { status: execution.statusCode });
++}
+diff --git a/tests/seat-scoring-api.test.ts b/tests/seat-scoring-api.test.ts
+new file mode 100644
+index 0000000..cf95d73
+--- /dev/null
++++ b/tests/seat-scoring-api.test.ts
+@@ -0,0 +1,26 @@
++import { describe, expect, it, vi } from "vitest";
++import { POST } from "@/app/api/seat-scores/route";
++import { scoreSeatBundles } from "@/lib/seat-scoring";
++
++describe("smart seat bundle scoring", () => {
++  it("ranks independently scored bundles and honors a preferred bundle", async () => {
++    const score = vi.fn(async (bundle: { id: string }) => ({ standard: 10, "extra-legroom": 20, flex: 15 }[bundle.id] ?? 0));
++    const bundles = await scoreSeatBundles("extra-legroom", score);
++
++    expect(bundles.map((bundle) => bundle.id)).toEqual(["extra-legroom", "flex", "standard"]);
++    expect(score).toHaveBeenCalledTimes(3);
++  });
++
++  it("serves scored bundles through the server-owned API", async () => {
++    const response = await POST(new Request("http://flightlab.test/api/seat-scores", {
++      method: "POST",
++      headers: { "content-type": "application/json", "x-request-id": "req-seat-1" },
++      body: JSON.stringify({ flightId: "FL-204", preferredBundleId: "extra-legroom" }),
++    }));
++
++    expect(response.status).toBe(200);
++    const body = await response.json();
++    expect(body.flightId).toBe("FL-204");
++    expect(body.bundles.map((bundle: { id: string }) => bundle.id)).toEqual(["extra-legroom", "flex", "standard"]);
++  });
++});
+

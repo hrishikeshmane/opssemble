@@ -1,0 +1,26 @@
+{
+  "changeId": "snapshot-pr-flexible-date-search",
+  "dataMode": "snapshot",
+  "repository": "Prathamesh-Pawar/flylab",
+  "repositoryUrl": "https://github.com/Prathamesh-Pawar/flylab",
+  "number": 102,
+  "title": "Add bounded flexible-date search API",
+  "state": "open",
+  "headSha": "2222222222222222222222222222222222222222",
+  "baseSha": "0000000000000000000000000000000000000000",
+  "mergeSha": null,
+  "releaseSha": null,
+  "changedFiles": [
+    {"path": "app/api/search/flexible/route.ts", "additions": 47, "deletions": 0},
+    {"path": "lib/flexible-search.ts", "additions": 42, "deletions": 0},
+    {"path": "tests/flexible-search.test.ts", "additions": 36, "deletions": 0}
+  ],
+  "diff": "diff --git a/lib/flexible-search.ts b/lib/flexible-search.ts\nnew file mode 100644\n--- /dev/null\n+++ b/lib/flexible-search.ts\n@@ -0,0 +1,4 @@\n+export function searchSevenDays(input: SearchInput) {\n+  const days = buildDateRange(input.departureDate, 7);\n+  return days.map((date) => ({ date, flights: searchFlights({ ...input, departureDate: date }) }));\n+}\n",
+  "repositoryDocs": {
+    "README.md": "FlightLab is a deterministic SFO to JFK booking application. Runtime triggers are neutral and signed.",
+    "docs/ARCHITECTURE.md": "Search aggregation is bounded to seven dates and uses static inventory.",
+    "docs/PRODUCT_METRICS.md": "Monitoring derives search outcome rates from raw numerator and denominator events."
+  },
+  "checks": {"state": "success", "required": [{"name": "test", "status": "completed", "conclusion": "success"}]},
+  "deployment": {"state": "pending", "url": null}
+}

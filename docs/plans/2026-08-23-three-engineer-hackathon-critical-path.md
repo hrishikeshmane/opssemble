@@ -1,5 +1,7 @@
 # Opssemble Three-Engineer Hackathon Critical Path
 
+> Superseded for implementation by [`monitoring/README.md`](../../monitoring/README.md). The merge/deploy/exercise lifecycle replaces the fixture-copy workflow described below.
+
 > **For Codex:** This is the canonical hackathon execution plan. Broader product and FlightLab documents are reference material only.
 
 **Goal:** In four hacking hours, demonstrate one real Opssemble Release Mission from a real or simulated GitHub merge through fixture-backed observations, concurrent agent analysis, deterministic policy, a generated report, and a Codex repair handoff.

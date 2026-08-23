@@ -4,9 +4,11 @@ Operational coverage for every change. A pull request receives an explicit Watch
 Plan, which is armed into a versioned Release Contract, which is executed by
 agents as a Release Mission.
 
-This branch (`moc-ui`) contains a **clickable mock UI** of that product. It is
-front-end only: there is no backend, no network, and no persistence. Every value
-on screen is read from [`lib/mock-data.ts`](./lib/mock-data.ts).
+This branch contains the clickable mock UI plus a separate merge-driven demo
+backend. The UI still reads [`lib/mock-data.ts`](./lib/mock-data.ts); the Python
+service under [`monitoring/`](./monitoring/README.md) receives real FlightLab
+GitHub/deployment/runtime facts and serves correlated simulated observations
+through four MCP profiles.
 
 ## Run it
 
@@ -16,6 +18,13 @@ npm run dev
 ```
 
 Then open http://localhost:3000 — it redirects to `/changes`.
+
+Run the monitoring/MCP process independently with:
+
+```bash
+UV_CACHE_DIR=/tmp/opssemble-uv-cache uv sync --group dev
+UV_CACHE_DIR=/tmp/opssemble-uv-cache uv run uvicorn monitoring.app:app --reload
+```
 
 Press <kbd>d</kbd> to toggle light and dark. The mock is designed dark-first.
 
@@ -68,6 +77,8 @@ Source wireframes for the product live in
 npm run typecheck
 npm run lint
 npm run build
+UV_CACHE_DIR=/tmp/opssemble-uv-cache uv run --group dev pytest -q
+UV_CACHE_DIR=/tmp/opssemble-uv-cache uv run python -m monitoring generate --check
 ```
 
 `components/ai-elements/` is a vendored AI Elements toolkit that is not wired

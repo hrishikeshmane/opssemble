@@ -1,0 +1,138 @@
+diff --git a/lib/booking-provider.ts b/lib/booking-provider.ts
+new file mode 100644
+index 0000000..caaceeb
+--- /dev/null
++++ b/lib/booking-provider.ts
+@@ -0,0 +1,51 @@
++import { randomUUID } from "node:crypto";
++import { completeDemoBooking, type BookingInput } from "@/lib/booking";
++
++export class ProviderUnavailable extends Error {}
++export class ProviderResponseTimeout extends Error {}
++
++export type ProviderFailure = "none" | "before-commit" | "after-commit";
++export type ProviderResult = { reservationId: string; paymentIntentId: string; attemptKey: string };
++
++export class DemoBookingProvider {
++  readonly reservations: ProviderResult[] = [];
++  readonly payments: ProviderResult[] = [];
++  private readonly resultsByAttemptKey = new Map<string, ProviderResult>();
++
++  constructor(private readonly failure: ProviderFailure = "none") {}
++
++  async reserveAndCharge(operationId: string, attemptKey: string): Promise<ProviderResult> {
++    if (this.failure === "before-commit") throw new ProviderUnavailable("provider unavailable before commit");
++    const existing = this.resultsByAttemptKey.get(attemptKey);
++    if (existing) return existing;
++
++    const suffix = this.reservations.length === 0 ? "a" : "b";
++    const result = {
++      reservationId: `res-${operationId.replace("op-", "")}-${suffix}`,
++      paymentIntentId: `pi-${operationId.replace("op-", "")}-${suffix}`,
++      attemptKey,
++    };
++    this.resultsByAttemptKey.set(attemptKey, result);
++    this.reservations.push(result);
++    this.payments.push(result);
++    if (this.failure === "after-commit") {
++      throw new ProviderResponseTimeout("provider response timed out after commit");
++    }
++    return result;
++  }
++}
++
++export async function bookWithTimeoutRetry(
++  input: BookingInput,
++  provider: DemoBookingProvider,
++  createAttemptKey: () => string = randomUUID,
++): Promise<ProviderResult> {
++  const booking = completeDemoBooking(input);
++  try {
++    return await provider.reserveAndCharge(booking.operationId, createAttemptKey());
++  } catch (error) {
++    if (!(error instanceof ProviderResponseTimeout)) throw error;
++    // A response timeout is ambiguous, but this retry incorrectly starts a new idempotency scope.
++    return provider.reserveAndCharge(booking.operationId, createAttemptKey());
++  }
++}
+diff --git a/app/api/book/route.ts b/app/api/book/route.ts
+new file mode 100644
+index 0000000..1207023
+--- /dev/null
++++ b/app/api/book/route.ts
+@@ -0,0 +1,37 @@
++import { randomUUID } from "node:crypto";
++import { NextResponse } from "next/server";
++import { createBookingOperationId, type BookingInput } from "@/lib/booking";
++import {
++  bookWithTimeoutRetry,
++  DemoBookingProvider,
++  ProviderResponseTimeout,
++} from "@/lib/booking-provider";
++import { runWithRuntimeEnvelope } from "@/lib/runtime-envelope";
++
++export async function POST(request: Request): Promise<NextResponse> {
++  const body = await request.json() as Partial<BookingInput>;
++  const requestId = request.headers.get("x-request-id") ?? randomUUID();
++  const operationId = createBookingOperationId(body.flightId ?? "missing", body.travelerEmail ?? "missing");
++  const execution = await runWithRuntimeEnvelope<Record<string, unknown>>(
++    { route: "/api/book", requestId, operationId },
++    async () => {
++      if (!body.flightId || !body.travelerName || !body.travelerEmail) {
++        return { result: { error: "flightId, travelerName, and travelerEmail are required" }, statusCode: 400 };
++      }
++      const provider = new DemoBookingProvider("after-commit");
++      try {
++        const booking = await bookWithTimeoutRetry(body as BookingInput, provider);
++        return { result: { operationId, reservationId: booking.reservationId }, statusCode: 201 };
++      } catch (error) {
++        if (error instanceof ProviderResponseTimeout) {
++          return { result: { error: "booking provider response timed out", operationId }, statusCode: 504 };
++        }
++        return {
++          result: { error: error instanceof Error ? error.message : "booking failed", operationId },
++          statusCode: 400,
++        };
++      }
++    },
++  );
++  return NextResponse.json(execution.result, { status: execution.statusCode });
++}
+diff --git a/tests/booking-api.test.ts b/tests/booking-api.test.ts
+new file mode 100644
+index 0000000..095b49c
+--- /dev/null
++++ b/tests/booking-api.test.ts
+@@ -0,0 +1,31 @@
++import { describe, expect, it } from "vitest";
++import {
++  bookWithTimeoutRetry,
++  DemoBookingProvider,
++  ProviderUnavailable,
++} from "@/lib/booking-provider";
++
++const input = {
++  flightId: "FL-204",
++  travelerName: "Avery Chen",
++  travelerEmail: "avery@example.com",
++};
++
++describe("booking provider", () => {
++  it("creates one reservation and payment on success", async () => {
++    const provider = new DemoBookingProvider();
++    const result = await bookWithTimeoutRetry(input, provider, () => "attempt-stable");
++
++    expect(result.attemptKey).toBe("attempt-stable");
++    expect(provider.reservations).toHaveLength(1);
++    expect(provider.payments).toHaveLength(1);
++  });
++
++  it("does not retry or commit side effects when the provider fails before commit", async () => {
++    const provider = new DemoBookingProvider("before-commit");
++
++    await expect(bookWithTimeoutRetry(input, provider, () => "attempt-stable")).rejects.toBeInstanceOf(ProviderUnavailable);
++    expect(provider.reservations).toEqual([]);
++    expect(provider.payments).toEqual([]);
++  });
++});
+
