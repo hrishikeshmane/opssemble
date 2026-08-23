@@ -368,70 +368,6 @@ export function getChange(id: string) {
 export type AgentKey =
   "impact" | "resilience" | "performance" | "product-health" | "repair"
 
-export type Agent = {
-  key: AgentKey
-  name: string
-  purpose: string
-  selectedWhen: string
-  tools: string[]
-  health: Status
-  runs: number
-  medianDuration: string
-}
-
-export const agents: Agent[] = [
-  {
-    key: "impact",
-    name: "Impact",
-    purpose: "Maps changed code to dependencies and customer journeys",
-    selectedWhen: "Every code-backed contract",
-    tools: ["GitHub", "Greptile"],
-    health: "ok",
-    runs: 214,
-    medianDuration: "38s",
-  },
-  {
-    key: "resilience",
-    name: "Resilience",
-    purpose: "Detects unsafe retry and recovery behavior from evidence",
-    selectedWhen: "External call, queue, retry, recovery",
-    tools: ["CloudWatch fixtures", "Stripe fixtures", "Greptile"],
-    health: "ok",
-    runs: 96,
-    medianDuration: "46s",
-  },
-  {
-    key: "performance",
-    name: "Performance",
-    purpose: "Compares candidate and baseline latency observations",
-    selectedWhen: "Hot path or resource behavior",
-    tools: ["CloudWatch fixtures", "PostHog fixtures"],
-    health: "ok",
-    runs: 131,
-    medianDuration: "42s",
-  },
-  {
-    key: "product-health",
-    name: "Product Health",
-    purpose: "Watches funnel and journey completion",
-    selectedWhen: "Journey or flag exposure",
-    tools: ["PostHog fixtures"],
-    health: "ok",
-    runs: 88,
-    medianDuration: "41s",
-  },
-  {
-    key: "repair",
-    name: "Repair",
-    purpose: "Opens a bounded fix PR from reproducible failure evidence",
-    selectedWhen: "Bounded reproducible failure",
-    tools: ["Codex", "GitHub"],
-    health: "ok",
-    runs: 27,
-    medianDuration: "8m 45s",
-  },
-]
-
 /* ------------------------------------------------------------ watch plan --- */
 
 export type PlanAgent = {
@@ -1669,66 +1605,6 @@ export const safetyBoundary = [
   "Codex holds no deployment credentials",
 ]
 
-/* -------------------------------------------------------------- policies --- */
-
-export type Policy = {
-  id: string
-  name: string
-  scope: string
-  requires: string
-  onFailure: string
-  enabled: boolean
-  lastEdited: string
-}
-
-export const policies: Policy[] = [
-  {
-    id: "pol-booking",
-    name: "Booking side effects",
-    scope: "Any change touching lib/booking.ts or lib/reservations.ts",
-    requires: "Resilience agent, max one reservation per operation",
-    onFailure: "Hold candidate, preserve production",
-    enabled: true,
-    lastEdited: "3d ago",
-  },
-  {
-    id: "pol-hot-path",
-    name: "Booking hot path",
-    scope: "Any change touching app/api/bookings/**",
-    requires: "Performance agent, p99 <= 1.5s",
-    onFailure: "Hold candidate",
-    enabled: true,
-    lastEdited: "9d ago",
-  },
-  {
-    id: "pol-flag",
-    name: "Flag exposure increase",
-    scope: "Feature flag rollout above 25%",
-    requires: "Product Health agent, funnel signal",
-    onFailure: "Restore previous flag value",
-    enabled: true,
-    lastEdited: "2w ago",
-  },
-  {
-    id: "pol-repair",
-    name: "Bounded repair authorization",
-    scope: "Any failed mission with a reproduction",
-    requires: "Human approval before Codex dispatch",
-    onFailure: "No repair dispatched",
-    enabled: true,
-    lastEdited: "2w ago",
-  },
-  {
-    id: "pol-copy",
-    name: "Copy-only exemption",
-    scope: "Changes limited to templates and copy",
-    requires: "No agents",
-    onFailure: "Not applicable",
-    enabled: false,
-    lastEdited: "1mo ago",
-  },
-]
-
 /* -------------------------------------------------------------- activity --- */
 
 export type TimelineEvent = {
@@ -1786,9 +1662,6 @@ export const changeTimeline: TimelineEvent[] = [
 /* ------------------------------------------------------------------- nav --- */
 
 export const navItems = [
-  { href: "/changes", label: "Changes", badge: changeStats.open },
   { href: "/missions", label: "Missions", badge: missionStats.running },
-  { href: "/agents", label: "Agents", badge: null },
-  { href: "/policies", label: "Policies", badge: null },
   { href: "/integrations", label: "Integrations", badge: null },
 ] as const

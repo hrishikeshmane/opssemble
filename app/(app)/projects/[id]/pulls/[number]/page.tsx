@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { connection } from "next/server"
-import { ExternalLinkIcon, GitPullRequestIcon } from "lucide-react"
+import { ExternalLinkIcon, GitPullRequestIcon, RadarIcon } from "lucide-react"
 
 import { getProject } from "@/lib/db/projects"
 import {
@@ -102,17 +102,26 @@ export default async function PullRequestPage({
         title={pullRequest.title}
         subtitle={`${slug} pull request #${pullRequest.number.toLocaleString()}`}
         actions={
-          <Link
-            href={pullRequest.url}
-            target="_blank"
-            rel="noreferrer"
-            aria-label="Open pull request on GitHub"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "icon-sm" })
-            )}
-          >
-            <ExternalLinkIcon />
-          </Link>
+          <>
+            <Link
+              href={`/projects/${project.id}/pulls/${pullRequest.number}/mission`}
+              className={cn(buttonVariants({ size: "sm" }))}
+            >
+              <RadarIcon data-icon="inline-start" />
+              Mission
+            </Link>
+            <Link
+              href={pullRequest.url}
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Open pull request on GitHub"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "icon-sm" })
+              )}
+            >
+              <ExternalLinkIcon />
+            </Link>
+          </>
         }
       >
         <MetaLine className="mt-2 flex-wrap text-xs text-muted-foreground/70">

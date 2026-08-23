@@ -14,13 +14,10 @@ import { useTheme } from "next-themes"
 import {
   ChevronsUpDown,
   FolderGit2,
-  GitPullRequest,
   MoonIcon,
   PlugIcon,
   Radar,
   Search,
-  ShieldCheckIcon,
-  SparklesIcon,
   SunIcon,
 } from "lucide-react"
 
@@ -35,10 +32,7 @@ import {
 
 const NAV = [
   { href: "/projects", label: "Projects", Icon: FolderGit2 },
-  { href: "/changes", label: "Changes", Icon: GitPullRequest },
   { href: "/missions", label: "Missions", Icon: Radar },
-  { href: "/agents", label: "Agents", Icon: SparklesIcon },
-  { href: "/policies", label: "Policies", Icon: ShieldCheckIcon },
   { href: "/integrations", label: "Integrations", Icon: PlugIcon },
 ] as const
 
@@ -50,7 +44,7 @@ function NavLink({
 }: {
   href: string
   label: string
-  Icon: typeof GitPullRequest
+  Icon: typeof FolderGit2
   active: boolean
 }) {
   return (
@@ -158,7 +152,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="truncate">
               {isProjectCatalog
                 ? "Search projects and pull requests"
-                : "Search changes and missions"}
+                : "Search projects and missions"}
             </span>
           </button>
           <div className="flex-1" />

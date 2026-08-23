@@ -13,18 +13,17 @@ navigates outside the routes below.
 
 ## Routes
 
-| Route            | Screen                                                                                  |
-| ---------------- | --------------------------------------------------------------------------------------- |
-| `/changes`       | Changes list                                                                            |
-| `/changes/[id]`  | Change detail — Watch Plan, Blast Radius, Stress Test, Diff, Timeline. The centrepiece. |
-| `/missions`      | Release Missions list                                                                   |
-| `/missions/[id]` | Mission detail — stages, agent work, decision, repair                                   |
-| `/agents`        | Agent registry                                                                          |
-| `/policies`      | Policies                                                                                |
-| `/integrations`  | Integrations and safety boundary                                                        |
+| Route                                   | Screen                                                |
+| --------------------------------------- | ----------------------------------------------------- |
+| `/projects`                             | Connected projects                                    |
+| `/projects/[id]`                        | Pull requests for a project                           |
+| `/projects/[id]/pulls/[number]`         | Pull request details and changed files                |
+| `/projects/[id]/pulls/[number]/mission` | Mission agents running for a pull request             |
+| `/missions`                             | Release Missions list                                 |
+| `/missions/[id]`                        | Mission detail — stages, agent work, decision, repair |
+| `/integrations`                         | Integrations and safety boundary                      |
 
-Walkthrough: `/changes` → `/changes/184` → `/missions/m-184-candidate` →
-`/missions/m-flag-dialup` → Repair with Codex.
+Walkthrough: `/projects` → project → pull request → mission.
 
 ## Provenance
 
@@ -40,13 +39,5 @@ Source wireframes for the _product_ (not the styling) are in
 
 ## Known gaps
 
-- Filters are presentational; the list always renders every record.
-- `/changes/183`, `/181`, `/179` have no diff fixtures, so their Diff tab shows
-  the empty state.
-- The populated stress-test fixture belongs to `/changes/184`; the other change
-  routes reuse it while this mock remains front-end only.
-- The populated blast-radius fixture also belongs to `/changes/184`; its score
-  is a presentational result of the mock diff and repository context, not a live
-  agent evaluation.
-- Agent and integration rows have no detail route, so they are plain `<li>`
-  rather than links.
+- Integration rows have no detail route, so they are plain `<li>` rather than
+  links.
