@@ -27,6 +27,14 @@ export type PullRequestMissionAgent = {
   reportSummary: string
   metrics: { label: string; value: string }[]
   findings: string[]
+  sections?: { title: string; content: string }[]
+  comparison?: {
+    metric: string
+    main: string
+    candidate: string
+    delta: string
+  }[]
+  mcpCalls?: { name: string; summary: string; output: string }[]
   acceptsInstructions?: boolean
 }
 
@@ -45,6 +53,19 @@ export function buildPullRequestMission(
   const changedLines = pullRequest.additions + pullRequest.deletions
   const reviewCount = pullRequest.reviews.length
   const checkCount = pullRequest.checks.length
+  const baselineP95 = 412
+  const candidateP95 = 440 + Math.floor(Math.random() * 121)
+  const baselineThroughput = 250
+  const candidateThroughput = 218 + Math.floor(Math.random() * 34)
+  const candidateErrorRate = (0.6 + Math.random() * 1.1).toFixed(1)
+  const latencyDelta = (
+    ((candidateP95 - baselineP95) / baselineP95) *
+    100
+  ).toFixed(1)
+  const throughputDelta = (
+    ((candidateThroughput - baselineThroughput) / baselineThroughput) *
+    100
+  ).toFixed(1)
   const agents: PullRequestMissionAgent[] = [
     {
       key: "impact",
@@ -65,6 +86,23 @@ export function buildPullRequestMission(
         "Primary impact is concentrated in the changed pull-request workflow.",
         "Adjacent project navigation and mission execution paths should be smoke tested.",
       ],
+      sections: [
+        {
+          title: "Affected surfaces",
+          content:
+            "Pull-request detail, mission routing, agent orchestration, and report rendering.",
+        },
+        {
+          title: "Dependency path",
+          content:
+            "Project metadata -> GitHub PR context -> orchestrator -> specialist report UI.",
+        },
+        {
+          title: "Rollback concern",
+          content:
+            "A runtime or provider failure must not block access to the underlying pull request.",
+        },
+      ],
     },
     {
       key: "stress-test",
@@ -75,10 +113,30 @@ export function buildPullRequestMission(
       reportSummary:
         "Dummy run: 10-minute traffic ramp against equivalent baseline and candidate environments.",
       metrics: [
-        { label: "Baseline p95", value: "412 ms" },
-        { label: "Candidate p95", value: "468 ms" },
-        { label: "Delta", value: "+13.6%" },
-        { label: "Error rate", value: "0.8%" },
+        { label: "Main p95", value: `${baselineP95} ms` },
+        { label: "Candidate p95", value: `${candidateP95} ms` },
+        { label: "Latency delta", value: `+${latencyDelta}%` },
+        { label: "Candidate errors", value: `${candidateErrorRate}%` },
+      ],
+      comparison: [
+        {
+          metric: "p95 latency",
+          main: `${baselineP95} ms`,
+          candidate: `${candidateP95} ms`,
+          delta: `+${latencyDelta}%`,
+        },
+        {
+          metric: "Throughput",
+          main: `${baselineThroughput} rps`,
+          candidate: `${candidateThroughput} rps`,
+          delta: `${throughputDelta}%`,
+        },
+        {
+          metric: "Error rate",
+          main: "0.4%",
+          candidate: `${candidateErrorRate}%`,
+          delta: `+${(Number(candidateErrorRate) - 0.4).toFixed(1)} pp`,
+        },
       ],
       findings: [
         "Candidate remained below the 600 ms demo threshold at 250 requests per second.",
@@ -103,6 +161,23 @@ export function buildPullRequestMission(
         "All simulated failures recovered inside the 60-second demo guardrail.",
         "Transient API failure produced one retry burst that should be watched after deploy.",
       ],
+      sections: [
+        {
+          title: "Simulated scenarios",
+          content:
+            "Dependency latency, one worker restart, and a transient GitHub API failure.",
+        },
+        {
+          title: "Recovery behavior",
+          content:
+            "All scenarios recovered; the slowest returned to steady state in 41 seconds.",
+        },
+        {
+          title: "Verdict",
+          content:
+            "Pass with watch: monitor retry bursts and mission-page availability after deploy.",
+        },
+      ],
     },
     {
       key: "watch-arm",
@@ -120,6 +195,28 @@ export function buildPullRequestMission(
       findings: [
         "Watch request error rate and p95 latency against the pre-deploy baseline.",
         "Alert on repeated API retries or a failed mission-page load.",
+      ],
+      mcpCalls: [
+        {
+          name: "get_metrics",
+          summary: "Read candidate latency, throughput, and error signals.",
+          output: "p95=468ms · error_rate=0.8% · throughput=236rps",
+        },
+        {
+          name: "get_logs",
+          summary: "Search for mission and provider failures.",
+          output: "2 retry warnings · 0 terminal mission failures",
+        },
+        {
+          name: "get_traces",
+          summary: "Inspect orchestrator-to-specialist latency.",
+          output: "p95 delegation=1.8s · slowest specialist=chaos-test",
+        },
+        {
+          name: "get_events",
+          summary: "Read deployment and pull-request events.",
+          output: "candidate deployed · observation window opened",
+        },
       ],
       acceptsInstructions: true,
     },

@@ -41,6 +41,14 @@ import {
   InputGroupText,
 } from "@/components/ui/input-group"
 import { Separator } from "@/components/ui/separator"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 const AGENT_ICON: Record<PullRequestMissionAgentKey, LucideIcon> = {
   impact: ActivityIcon,
@@ -68,11 +76,31 @@ function AgentReport({
   onInstructionChange: (value: string) => void
   onInstructionSubmit: (event: React.FormEvent<HTMLFormElement>) => void
 }) {
+  const [completedMcpCalls, setCompletedMcpCalls] = React.useState(0)
+
+  React.useEffect(() => {
+    if (!agent.mcpCalls?.length) {
+      return
+    }
+
+    const timers = agent.mcpCalls.map((_, index) =>
+      window.setTimeout(
+        () => setCompletedMcpCalls(index + 1),
+        650 * (index + 1)
+      )
+    )
+
+    return () => timers.forEach(window.clearTimeout)
+  }, [agent.mcpCalls])
+
   return (
     <div className="flex flex-col gap-3 px-3 pb-3">
       <Separator />
       <div>
-        <h3 className="text-xs font-medium">{agent.reportTitle}</h3>
+        <p className="text-[10px] font-medium text-muted-foreground">
+          Agent-generated report
+        </p>
+        <h3 className="mt-0.5 text-sm font-medium">{agent.reportTitle}</h3>
         <p className="mt-1 max-w-3xl text-xs text-muted-foreground">
           {agent.reportSummary}
         </p>
@@ -90,6 +118,82 @@ function AgentReport({
           </div>
         ))}
       </dl>
+
+      {agent.comparison ? (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Metric</TableHead>
+              <TableHead>Main</TableHead>
+              <TableHead>Candidate</TableHead>
+              <TableHead>Delta</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {agent.comparison.map((row) => (
+              <TableRow key={row.metric}>
+                <TableCell className="font-medium">{row.metric}</TableCell>
+                <TableCell className="font-mono">{row.main}</TableCell>
+                <TableCell className="font-mono">{row.candidate}</TableCell>
+                <TableCell className="font-mono">{row.delta}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : null}
+
+      {agent.sections ? (
+        <dl className="grid gap-3 md:grid-cols-3">
+          {agent.sections.map((section) => (
+            <div key={section.title}>
+              <dt className="text-xs font-medium">{section.title}</dt>
+              <dd className="mt-1 text-xs text-muted-foreground">
+                {section.content}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+
+      {agent.mcpCalls ? (
+        <div>
+          <div className="flex items-center gap-2">
+            <h4 className="text-xs font-medium">Fake MCP activity</h4>
+            <span className="font-mono text-[10px] text-muted-foreground">
+              fake-observability-mcp
+            </span>
+          </div>
+          <ol className="mt-2 flex flex-col gap-2">
+            {agent.mcpCalls.map((call, index) => {
+              const complete = index < completedMcpCalls
+              const running = index === completedMcpCalls
+
+              return (
+                <li
+                  className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2"
+                  key={call.name}
+                >
+                  <StatusGlyph
+                    className="mt-0.5"
+                    status={complete ? "ok" : running ? "running" : "queued"}
+                  />
+                  <div className="min-w-0">
+                    <p className="font-mono text-xs">{call.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {call.summary}
+                    </p>
+                    {complete ? (
+                      <p className="mt-0.5 font-mono text-[10px] text-muted-foreground">
+                        {call.output}
+                      </p>
+                    ) : null}
+                  </div>
+                </li>
+              )
+            })}
+          </ol>
+        </div>
+      ) : null}
 
       <ul className="flex list-disc flex-col gap-1 pl-4 text-xs text-muted-foreground">
         {agent.findings.map((finding) => (

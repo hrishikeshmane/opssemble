@@ -230,19 +230,23 @@ const delegationInputSchema = z
 const noInputSchema = z.object({}).passthrough()
 
 const SPECIALIST_INSTRUCTIONS: Record<PrSpecialistId, string> = {
-  "impact-analysis": `Produce a concise blast analysis report for this pull request.
+  "impact-analysis": `Produce a structured blast analysis report for this pull request.
 Use repository, observability, and shared-context retrieval tools only when they
-provide relevant evidence. Cover affected components, callers, data contracts,
-deployment scope, rollback concerns, and concrete evidence. Do not modify
-anything. Your final response is the blast analysis report.`,
+provide relevant evidence. Include: executive summary, blast score out of 10,
+affected surfaces, dependency path, customer and operational impact, failure
+modes, evidence, deployment scope, rollback concerns, and recommended validation.
+Clearly distinguish facts from inference. Do not modify anything. Your final
+response is the blast analysis report.`,
   "stress-test": `Assess pull request performance risk using read-only evidence.
 You must call runSimulatedStressTest exactly once. The result is deterministic
 simulated data, not a real load test; label it as simulated in the final report.
 Do not claim that traffic was generated and do not modify anything.`,
-  "chaos-test": `Assess pull request resilience risk using read-only evidence.
+  "chaos-test": `Produce a structured chaos analysis report using read-only evidence.
 You must call runSimulatedChaosTest exactly once. The result is deterministic
 simulated data, not a real fault injection; label it as simulated in the final
-report. Do not claim that infrastructure was changed and do not modify anything.`,
+report. Include: scenario, hypothesis, simulated observations, recovery behavior,
+resilience gaps, deployment risk, verdict, and recommended watch items. Do not
+claim that infrastructure was changed and do not modify anything.`,
   "watch-arm": `Identify deployment watch items for this pull request. Produce a
 concise watch list with signals, logs, traces, events, thresholds or symptoms,
 rollback triggers, and an observation window. Follow the supplied user
