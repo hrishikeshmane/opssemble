@@ -1,5 +1,11 @@
 # Opssemble
 
+> **Product vision, not the hackathon execution plan.** The canonical four-hour,
+> three-engineer scope is
+> [`docs/plans/2026-08-23-three-engineer-hackathon-critical-path.md`](./plans/2026-08-23-three-engineer-hackathon-critical-path.md).
+> This document intentionally describes the broader production direction,
+> including integrations that are out of scope for the judged build.
+
 **Autonomous release operations for teams shipping at agent speed.**
 
 **Greptile deploys a swarm to review your code. Opssemble assembles a swarm to prove each release is safe to operate.**
