@@ -434,6 +434,12 @@ No fixture file dictates steps 3 through 7 or steps 12 through 24.
 
 ## 7. PR Portfolio
 
+> **Hackathon override:** PR #1 and PR #2 below are post-hackathon reference
+> scenarios. Engineer 2 builds only the booking-timeout-retry scenario. For its
+> exact raw observations, offsets, thresholds, and repair profile, use
+> [§8 of the canonical critical path](./2026-08-23-three-engineer-hackathon-critical-path.md#8-fixture-corrections).
+> Do not implement fixture timings from this reference section.
+
 ## PR #1: Smart Seat Bundles
 
 ### Git State
@@ -558,48 +564,35 @@ This retries payment and reservation side effects without a stable idempotency k
 
 ### Custom Monitoring Prompt
 
-Enter during the demo:
+Paste during the demo:
 
 ```text
-Make sure a timeout after the reservation is committed cannot create a
-second reservation or payment. Keep booking p99 under 1.5 seconds and
-stop if completion drops by more than 5%.
+Also monitor booking completion and duplicate reservations.
 ```
 
-The real prompt compiler should produce:
+Draft Watch Plan v2 already contains `booking_p99_ms <= 1500`. The prompt
+compiler adds:
 
 ```text
-reservations_per_operation <= 1
-payment_intents_per_operation <= 1
-booking_p99_ms <= 1500
+max_reservations_per_operation <= 1
 booking_completion_relative_drop <= 5%
 ```
 
 ### Failure Observations
 
-```text
-T+5s   FIS experiment state becomes running
-T+12s  CloudWatch log: reservation committed for operation op-204
-T+15s  CloudWatch log: provider response timed out
-T+17s  CloudWatch log: caller retries operation op-204
-T+19s  Stripe returns two payment intents for operation op-204
-T+22s  CloudWatch logs contain two reservation IDs for operation op-204
-T+26s  Booking p99 is 2,280ms
-T+30s  PostHog booking completion is 11% below baseline
-T+36s  FIS experiment state becomes completed
-```
-
-These are observations, not findings. The agents must correlate the shared operation ID and determine which clauses fail.
+Superseded. Use the exact failure-profile NDJSON and offsets in
+[canonical §8](./2026-08-23-three-engineer-hackathon-critical-path.md#exact-failure-and-repair-profiles).
+It intentionally fails all three required clauses.
 
 ### Expected Agent Selection
 
 ```text
-Impact:         required
 Resilience:     required
 Performance:    required
 Product Health: required
-Security:       skipped
 ```
+
+Impact analysis is planner context, not a fourth mission agent.
 
 ### Real Codex Repair
 
@@ -615,17 +608,10 @@ Codex should independently determine a fix equivalent to:
 
 ### Repair Observations
 
-The repair profile contains:
-
-```text
-one payment intent for operation op-204
-one reservation ID for operation op-204
-booking p99 of 920ms
-booking completion within 2% of baseline
-completed FIS experiment
-```
-
-The repair fixture does not contain `PASS`. The rerun agents must reach that result.
+Superseded. Use the exact T+2s through T+8s repair profile in
+[canonical §8](./2026-08-23-three-engineer-hackathon-critical-path.md#exact-failure-and-repair-profiles).
+The shortened offsets let evidence readiness close the unchanged contract early;
+fixtures still contain no verdict.
 
 ## 8. Expected Opssemble Behavior
 
@@ -1021,19 +1007,19 @@ node_modules/next/dist/docs/
 From FlightLab:
 
 ```bash
-bun run lint
-bun run typecheck
-bun run test
-bun run build
+npm run lint
+npm run typecheck
+npm run test
+npm run build
 ```
 
 From Opssemble:
 
 ```bash
-bun run lint
-bun run typecheck
-bun run test
-bun run build
+npm run lint
+npm run typecheck
+npm run test
+npm run build
 ```
 
 Critical tests:

@@ -1,9 +1,8 @@
 /**
  * One mission in the queue.
  *
- * The same three zones the changes list uses -- state glyph, title over a
- * dot-separated meta line, right-aligned time -- because the two lists answer
- * the same shape of question and a reader should not have to relearn the row.
+ * Three zones -- state glyph, title over a dot-separated meta line, and
+ * right-aligned time -- keep every mission easy to scan.
  *
  * There is no progress bar and no chevron. A bar would be a second reading of
  * the agent count already in the meta line, and every row here is a link, so a
@@ -70,8 +69,7 @@ export function MissionRow({ mission }: { mission: Mission }) {
               />
             }
           >
-            {/* size-4 matches the plan glyph in the changes list, so the first
-                column of both lists sits on the same optical edge. */}
+            {/* A fixed glyph size keeps the first column on one optical edge. */}
             <VerdictIcon className="size-4" verdict={verdict} />
           </TooltipTrigger>
           <TooltipContent>{label}</TooltipContent>

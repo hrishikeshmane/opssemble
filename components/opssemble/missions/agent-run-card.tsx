@@ -54,7 +54,7 @@ function ToolCallRow({ call }: { call: ToolCall }) {
         {/* A queued call has not spent any time yet. The mock carries "--" for
             it, and printing that reads as a duration we failed to measure. */}
         {call.duration === "--" ? null : (
-          <span className="ml-auto shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+          <span className="ml-auto shrink-0 font-mono text-[10px] text-muted-foreground tabular-nums">
             {call.duration}
           </span>
         )}
@@ -76,8 +76,14 @@ function ToolCallRow({ call }: { call: ToolCall }) {
   )
 }
 
-export function AgentRunCard({ run }: { run: AgentRun }) {
-  const [open, setOpen] = React.useState(false)
+export function AgentRunCard({
+  run,
+  defaultOpen = false,
+}: {
+  run: AgentRun
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = React.useState(defaultOpen)
 
   return (
     <li>
@@ -87,7 +93,8 @@ export function AgentRunCard({ run }: { run: AgentRun }) {
           // Skipped offscreen only while collapsed. An open card is nothing like
           // the intrinsic hint tall, and reporting the hint for one would make
           // the scrollbar lie as soon as it scrolled out of view.
-          !open && "[contain-intrinsic-block-size:44px] [content-visibility:auto]"
+          !open &&
+            "[contain-intrinsic-block-size:44px] [content-visibility:auto]"
         )}
       >
         <Collapsible onOpenChange={setOpen} open={open}>
